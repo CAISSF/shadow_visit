@@ -16,8 +16,8 @@ Add **Person**<br>
 Add **Attendance Category**<br>
 Add **Late Arrival Time**<br>
 Add **Early Dismissal Time**<br>
-Add **Notes** contains "visit," or "tour," or "shadow"<br>
-> For Notes, input criteria value: `visit; tour; shadow`. Every school visit/tour entry contains at least one of these three words.
+Add **Notes** contains "shadow," "visit" or "tour"<br>
+> For Notes, input criteria value: `shadow; visit; tour`. Every school visit/tour entry contains at least one of these three words.
 
 Ascending order by Attendance Date, then ascending order by Person
 
@@ -37,9 +37,9 @@ FROM daily_attendance
 WHERE attendance_date >= DATE '2025-09-01'
   AND grade_level_enrolled_at IN ('Grade 8')
   AND (
-    notes ILIKE '%visit%'
+    notes ILIKE '%shadow%'
+    OR notes ILIKE '%visit%'
     OR notes ILIKE '%tour%'
-    OR notes ILIKE '%shadow%'
   )
 ORDER BY attendance_date, person;
 ```
@@ -52,7 +52,7 @@ GET https://api.veracross.com/{school_route}/v3/daily-attendance?
   select=attendance_date,person,attendance_category,late_arrival_time,early_dismissal_time,notes&
   attendance_date=gte.2025-09-01&
   grade_level_enrolled_at=eq.Grade%208&
-  or=(notes.ilike.*visit*,notes.ilike.*tour*,notes.ilike.*shadow*)&
+  or=(notes.ilike.*shadow*,notes.ilike.*visit*,notes.ilike.*tour*)&
   order=attendance_date.asc,person.asc
 ```
 
