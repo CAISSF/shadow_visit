@@ -18,3 +18,27 @@ Add **Notes** contains "visit," or "tour," or "shadow"<br>
 > For Notes, input criteria value: `visit; tour; shadow`
 
 Ascending order by Attendance Date, then ascending order by Person
+
+# Equivalent SQL Query
+
+Veracross UI does not permit an SQL-like query. However, if it had, then the query would look like:
+
+```sql
+SELECT
+  attendance_date,
+  person,
+  attendance_category,
+  late_arrival_time,
+  early_dismissal_time,
+  notes
+FROM daily_attendance
+WHERE attendance_date >= DATE '2025-09-01'
+  AND grade_level_enrolled_at IN ('Grade 8')
+  AND (
+    notes ILIKE '%visit%'
+    OR notes ILIKE '%tour%'
+    OR notes ILIKE '%shadow%'
+  )
+ORDER BY attendance_date, person;
+```
+An SQL-like query like this would produce a data grid already.
