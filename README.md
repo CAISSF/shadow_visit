@@ -42,3 +42,18 @@ WHERE attendance_date >= DATE '2025-09-01'
 ORDER BY attendance_date, person;
 ```
 An SQL-like query like this would produce a data grid already.
+
+# Equivalent API Query
+
+```bash
+GET https://api.veracross.com/{school_route}/v3/daily-attendance?
+  select=attendance_date,person,attendance_category,late_arrival_time,early_dismissal_time,notes&
+  attendance_date=gte.2025-09-01&
+  grade_level_enrolled_at=eq.Grade%208&
+  or=(notes.ilike.*visit*,notes.ilike.*tour*,notes.ilike.*shadow*)&
+  order=attendance_date.asc,person.asc
+```
+
+# To Do
+
+Test the API call
