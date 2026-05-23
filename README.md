@@ -10,6 +10,8 @@ Visualization: Data Grid
 Click on the Fields tab...<br>
 Add **Attendance Date** is on or after 09/01/25<br>
 Add **PERSON: Grade Level Enrolled At** in Grade 8<br>
+> PERSON: Grade Level Enrolled At has a One-To-Many Relationship because some students are in multiple preschool levels. (Not an issue for Grade 8.)
+
 Add **Person**<br>
 Add **Attendance Category**<br>
 Add **Late Arrival Time**<br>
