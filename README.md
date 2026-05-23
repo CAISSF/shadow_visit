@@ -17,7 +17,7 @@ Add **Attendance Category**<br>
 Add **Late Arrival Time**<br>
 Add **Early Dismissal Time**<br>
 Add **Notes** contains "visit," or "tour," or "shadow"<br>
-> For Notes, input criteria value: `visit; tour; shadow`
+> For Notes, input criteria value: `visit; tour; shadow`. Every school visit/tour entry contains at least one of these three words.
 
 Ascending order by Attendance Date, then ascending order by Person
 
