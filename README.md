@@ -49,7 +49,7 @@ An SQL-like query like this would produce a data grid already.
 
 ```bash
 curl -G "https://api.veracross.com/{school_route}/v3/daily-attendance" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Authorization: Bearer {your_access_token}" \
   --data-urlencode "select=attendance_date,person,attendance_category,late_arrival_time,early_dismissal_time,notes" \
   --data-urlencode "attendance_date=gte.2025-09-01" \
   --data-urlencode "grade_level_enrolled_at=eq.Grade 8" \
