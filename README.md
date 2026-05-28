@@ -33,7 +33,7 @@ SELECT
   late_arrival_time,
   early_dismissal_time,
   notes
-FROM daily_attendance
+FROM master_attendance
 WHERE attendance_date >= DATE '2025-09-01'
   AND grade_level_enrolled_at IN ('Grade 8')
   AND (
@@ -48,7 +48,7 @@ An SQL-like query like this would produce a data grid already.
 # Equivalent API Query
 
 ```bash
-curl -G "https://api.veracross.com/{school_route}/v3/daily-attendance" \
+curl -G "https://api.veracross.com/{school_route}/v3/master_attendance" \
   -H "Authorization: Bearer {your_access_token}" \
   --data-urlencode "select=attendance_date,person,attendance_category,late_arrival_time,early_dismissal_time,notes" \
   --data-urlencode "attendance_date=gte.2025-09-01" \
