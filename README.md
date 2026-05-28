@@ -48,12 +48,13 @@ An SQL-like query like this would produce a data grid already.
 # Equivalent API Query
 
 ```bash
-GET https://api.veracross.com/{school_route}/v3/daily-attendance?
-  select=attendance_date,person,attendance_category,late_arrival_time,early_dismissal_time,notes&
-  attendance_date=gte.2025-09-01&
-  grade_level_enrolled_at=eq.Grade%208&
-  or=(notes.ilike.*shadow*,notes.ilike.*visit*,notes.ilike.*tour*)&
-  order=attendance_date.asc,person.asc
+curl -G "https://api.veracross.com/{school_route}/v3/daily-attendance" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  --data-urlencode "select=attendance_date,person,attendance_category,late_arrival_time,early_dismissal_time,notes" \
+  --data-urlencode "attendance_date=gte.2025-09-01" \
+  --data-urlencode "grade_level_enrolled_at=eq.Grade 8" \
+  --data-urlencode "or=(notes.ilike.*shadow*,notes.ilike.*visit*,notes.ilike.*tour*)" \
+  --data-urlencode "order=attendance_date.asc,person.asc"
 ```
 
 # To Do
