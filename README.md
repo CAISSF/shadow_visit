@@ -51,7 +51,7 @@ An SQL-like query like this would produce a data grid already.
 curl -G "https://api.veracross.com/{school_route}/v3/master_attendance" \
   -H "Authorization: Bearer {your_access_token}" \
   --data-urlencode "select=attendance_date,person,attendance_category,late_arrival_time,early_dismissal_time,notes" \
-  --data-urlencode "attendance_date=gte.2025-09-01" \
+  --data-urlencode "attendance_date=2025-09-01" \
   --data-urlencode "grade_level_enrolled_at=eq.Grade 8" \
   --data-urlencode "or=(notes.ilike.*shadow*,notes.ilike.*visit*,notes.ilike.*tour*)" \
   --data-urlencode "order=attendance_date.asc,person.asc"
