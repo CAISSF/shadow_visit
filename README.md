@@ -55,8 +55,7 @@ seq 0 300 | xargs --max-procs=5 -I {} bash -c '
 ' _ {} | jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' > output.json
 ```
 
-Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 300 times instead of filtering by date. Sep 1 to mid-Jun is about 300 days.
-
+Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 300 times instead of filtering by date. Sep 1 to mid-Jun is 280-290 days, and 300 is the rate limit.
 
 # Testing
 
@@ -99,7 +98,7 @@ curl --silent --request GET \
 
 It will return either `"The provided access token has expired"` or, if not expired, `null`. 
 
-Query requests are also subject to rate limits.
+Query requests are also subject to rate limits of 300 requests every 3 minutes.
 
 # Suggestion
 
@@ -120,4 +119,4 @@ Refine selection more, since not all visits/tours are to schools.
 
 # Reference
 
-[Veracross API Documentation](https://api-docs.veracross.com/)
+[Veracross API Documentation](https://api-docs.veracross.com/) (e.g., endpoints, rate limits)
