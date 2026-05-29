@@ -83,7 +83,7 @@ export access_token=$(curl --silent --request POST https://accounts.veracross.co
   --data "scope=master_attendance:list" | jq --raw-output '.access_token')
 ```
 
-Command will retrieve a new access token and store is value in variable: `access_token`. (Used tokens expire in 1 hour.)
+Command will retrieve a new access token and store is value in variable: `access_token`. Used tokens expire in 1 hour, so re-run this command after each token expires.
 
 ## Run API Query
 
