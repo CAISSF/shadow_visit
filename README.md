@@ -107,7 +107,7 @@ If it returns `The provided access token is missing a required scope: master_att
 `{your_client_secret}` &rarr; `$client_secret`<br>
 `{your_access_token}` &rarr; `$access_token`
 2. Either export the environment variables: `school_route`, `client_id` and `client_secret` with their values OR<p>
-(And this what I do) Place the environment variables and their values in a `.env` file, and export them by running: `export $(grep -v '^#' .env | xargs)`
+(And this what I do) Place the environment variables and their values in a `.env` file, and export them by running: `export $(grep --invert-match '^#' .env | xargs)`
 3. _Then_ run the command to retrieve the access token, and then run the API query. 
 
 > The command to retrieve the access token exports `access_token` and its value for you, so do not export it manually or place it in `.env`. Let it be.
