@@ -55,6 +55,9 @@ seq 0 300 | xargs --max-procs=20 --replace={} bash --command '
 ' _ {} | jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)'
 ```
 
+Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 300 times instead of filtering by date. Sep 1 to mid-Jun is about 300 days.
+
+
 # Testing
 
 ## Requirements
