@@ -50,7 +50,6 @@ An SQL-like query like this would produce a data grid already.
 for date in $(seq -f "%02g" 1 30 | awk '{printf "2025-09-%s\n", $1}'); do
   curl -s -G "https://api.veracross.com/{school_route}/v3/master_attendance" \
     -H "Authorization: Bearer {your_access_token}" \
-    -H "X-Page-Size: 1000" \
     --data-urlencode "attendance_date=$date"
 done | jq -s '[.[].data[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)'
 ```
