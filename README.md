@@ -93,7 +93,7 @@ If the JSON response is empty (i.e., `[]`), either the query found nothing or th
 
 ```bash
 curl --silent --request GET \
-  --url "https://api.veracross.com/$school_route/v3/master_attendance" \                           
+  --url "https://api.veracross.com/$school_route/v3/master_attendance" \
   --header "Authorization: Bearer $access_token" | jq .error
 ```
 
