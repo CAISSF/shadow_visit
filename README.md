@@ -89,6 +89,19 @@ Command will retrieve a new access token and store is value in variable: `access
 
 See above, and be patient.
 
+# Suggestion
+
+1. In each command and query, replace:<p>
+`{subdirectory}` &rarr; `$school_route`<br>
+`{your_client_id}` &rarr; `$client_id`<br>
+`{your_client_secret}` &rarr; `$client_secret`<br>
+`{your_access_token}` &rarr; `$access_token`
+2. Either export the environment variables: `school_route`, `client_id` and `client_secret` with their values OR<p>
+(And this what I do) Place the environment variables and their values in a `.env` file, and export them by running: `export $(grep -v '^#' .env | xargs)`
+3. _Then_ run the command to retrieve the access token, and then run the API query. 
+
+> The command to retrieve the access token exports `access_token` and its value for you, so do not export it manually or place it in `.env`. Let it be.
+
 # To Do
 
 Refine selection more, since not all visits/tours are to schools.
