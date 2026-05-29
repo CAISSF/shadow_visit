@@ -87,4 +87,5 @@ See above
 
 # To Do
 
-Test the API call
+Refine selection more, since not all visits/tours are to schools.
+
