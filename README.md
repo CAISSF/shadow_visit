@@ -83,7 +83,7 @@ Command will retrieve a new access token and store is value in variable: `access
 
 ## Run API Query
 
-See above
+See above, and be patient.
 
 # To Do
 
