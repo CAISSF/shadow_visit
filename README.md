@@ -8,8 +8,8 @@ Click on the Query tab...<br>
 Visualization: Data Grid
 
 Click on the Fields tab...<br>
-Add **Attendance Date** is on or after 09/01/25<br>
-~~Add **PERSON: Grade Level Enrolled At** in Grade 8<br>~~
+Add **Attendance Date** is on or after `09/01/25`<br>
+~~Add **PERSON: Grade Level Enrolled At** in `Grade 8`<br>~~
 ~~> PERSON: Grade Level Enrolled At has a One-To-Many Relationship because some students are in multiple preschool levels. (Not an issue for Grade 8.)~~ Visits/tours start in Grade 8, so this filter is redundant.
 
 Add **Person**<br>
@@ -60,12 +60,12 @@ seq 0 300 | xargs -P 20 -I {} bash -c '
 
 ## Requirements
 
-school_route={subdirectory}
+`school_route={subdirectory}`
 
 > Example: "cais" in https://axiom.veracross.com/cais/
 
-client_id={your_client_id}
-client_secret={your_client_secret}
+`client_id={your_client_id}`<br>
+`client_secret={your_client_secret}`
 
 > To obtain these credentials, a user with a OAuth_App_Admin supplemental security role must create an internal integration in Identity & Access Management
 
