@@ -47,12 +47,12 @@ An SQL-like query like this would produce a data grid already.
 # Equivalent API Query
 
 ```bash
-curl -G "https://api.veracross.com/{school_route}/v3/master_attendance" \
-  -H "Authorization: Bearer {your_access_token}" \
-  --data-urlencode "select=attendance_date,person,attendance_category,late_arrival_time,early_dismissal_time,notes" \
-  --data-urlencode "attendance_date=2025-09-01" \
-  --data-urlencode "or=(notes.ilike.*shadow*,notes.ilike.*visit*,notes.ilike.*tour*)" \
-  --data-urlencode "order=attendance_date.asc,person.asc"
+for date in $(seq -f "%02g" 1 30 | awk '{printf "2025-09-%s\n", $1}'); do
+  curl -s -G "https://api.veracross.com/{school_route}/v3/master_attendance" \
+    -H "Authorization: Bearer {your_access_token}" \
+    -H "X-Page-Size: 1000" \
+    --data-urlencode "attendance_date=$date"
+done | jq -s '[.[].data[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)'
 ```
 
 # To Do
