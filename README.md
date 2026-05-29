@@ -51,7 +51,6 @@ seq 0 300 | xargs -P 20 -I {} bash -c '
   date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d)
   curl -s -G "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
     -H "Authorization: Bearer {your_access_token}" \
-    -H "X-Page-Size: 200" \
     --data-urlencode "attendance_date=$date"
 ' _ {}  | jq -s '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)'
 ```
