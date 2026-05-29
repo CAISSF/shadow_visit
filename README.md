@@ -48,7 +48,7 @@ An SQL-like query like this would produce a data grid already.
 
 ```bash
 seq 0 300 | xargs --max-procs=20 -I {} bash -c '
-  date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d)
+  date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
   curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
     --header "Authorization: Bearer {your_access_token}" \
     --data-urlencode "attendance_date=$date"
