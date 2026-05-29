@@ -98,7 +98,7 @@ curl --silent --request GET \
 
 It will return either `"The provided access token has expired"` or, if not expired, `null`. 
 
-Query requests are also subject to rate limits of 300 requests every 3 minutes.
+Again, query requests are also subject to rate limits of 300 requests every 3 minutes.
 
 # Suggestion
 
