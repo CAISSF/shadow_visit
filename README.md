@@ -89,7 +89,7 @@ Command will retrieve a new access token and store is value in variable: `access
 
 See "Similar API Query" above, and be patient. You will retrieve a JSON response in a moment.
 
-If the JSON response is empty (i.e., `[]`), either the query found nothing or the access token has expired or is invalid. To check if the access token has expired or is invalid, run the command:
+If the JSON response is empty (i.e., `[]`), either the query found nothing or the access token has expired. To check if the access token has expired, run the command:
 
 ```bash
 curl --silent --request GET \
@@ -97,7 +97,7 @@ curl --silent --request GET \
   --header "Authorization: Bearer $access_token" | jq .error
 ```
 
-If it returns `The provided access token is missing a required scope: master_attendance:list`, then your token has expired or is invalid. If it returns `null`, your token is has _not_ expired and is valid. (If you forgot to add the `master_attendance:list` scope in the command to retrieve the access token, it will falsely flag your access token as expired or invalid.)
+It will return either `"The provided access token has expired"` or, if not expired, `null`. 
 
 # Suggestion
 
