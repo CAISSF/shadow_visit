@@ -47,12 +47,12 @@ An SQL-like query like this would produce a data grid already.
 # Similar API Query
 
 ```bash
-seq 0 300 | xargs -P 20 -I {} bash -c '
+seq 0 300 | xargs --max-procs=20 --replace={} bash --command '
   date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d)
-  curl -s -G "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
-    -H "Authorization: Bearer {your_access_token}" \
+  curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
+    --header "Authorization: Bearer {your_access_token}" \
     --data-urlencode "attendance_date=$date"
-' _ {}  | jq -s '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)'
+' _ {} | jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)'
 ```
 
 # Testing
@@ -73,11 +73,11 @@ seq 0 300 | xargs -P 20 -I {} bash -c '
 In a terminal emulator (e.g., macOS Terminal), run the command:
 
 ```bash
-export access_token=$(curl -s -X POST https://accounts.veracross.com/{subdirectory}/oauth/token \
-  -d "grant_type=client_credentials" \
-  -d "client_id={your_client_id}" \
-  -d "client_secret={your_client_secret}" \
-  -d "scope=master_attendance:list" | jq -r '.access_token')
+export access_token=$(curl --silent --request POST https://accounts.veracross.com/{subdirectory}/oauth/token \
+  --data "grant_type=client_credentials" \
+  --data "client_id={your_client_id}" \
+  --data "client_secret={your_client_secret}" \
+  --data "scope=master_attendance:list" | jq --raw-output '.access_token')
 ```
 
 Command will retrieve a new access token and store is value in variable: `access_token`. (Used tokens expire in 1 hour.)
