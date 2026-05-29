@@ -89,3 +89,6 @@ See above
 
 Refine selection more, since not all visits/tours are to schools.
 
+# Reference
+
+[Veracross API Documentation](https://api-docs.veracross.com/)
