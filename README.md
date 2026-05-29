@@ -9,8 +9,8 @@ Visualization: Data Grid
 
 Click on the Fields tab...<br>
 Add **Attendance Date** is on or after 09/01/25<br>
-Add **PERSON: Grade Level Enrolled At** in Grade 8<br>
-> PERSON: Grade Level Enrolled At has a One-To-Many Relationship because some students are in multiple preschool levels. (Not an issue for Grade 8.)
+~~Add **PERSON: Grade Level Enrolled At** in Grade 8<br>~~
+~~> PERSON: Grade Level Enrolled At has a One-To-Many Relationship because some students are in multiple preschool levels. (Not an issue for Grade 8.)~~ Visits/tours start in Grade 8, so this filter is redundant.
 
 Add **Person**<br>
 Add **Attendance Category**<br>
@@ -35,7 +35,6 @@ SELECT
   notes
 FROM master_attendance
 WHERE attendance_date >= DATE '2025-09-01'
-  AND grade_level_enrolled_at IN ('Grade 8')
   AND (
     notes ILIKE '%shadow%'
     OR notes ILIKE '%visit%'
@@ -52,7 +51,6 @@ curl -G "https://api.veracross.com/{school_route}/v3/master_attendance" \
   -H "Authorization: Bearer {your_access_token}" \
   --data-urlencode "select=attendance_date,person,attendance_category,late_arrival_time,early_dismissal_time,notes" \
   --data-urlencode "attendance_date=2025-09-01" \
-  --data-urlencode "grade_level_enrolled_at=eq.Grade 8" \
   --data-urlencode "or=(notes.ilike.*shadow*,notes.ilike.*visit*,notes.ilike.*tour*)" \
   --data-urlencode "order=attendance_date.asc,person.asc"
 ```
