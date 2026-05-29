@@ -47,7 +47,7 @@ An SQL-like query like this would produce a data grid already.
 # Similar API Query (macOS)
 
 ```bash
-seq 0 300 | xargs --max-procs=5 -I {} bash -c '
+seq 0 290 | xargs --max-procs=2 -I {} bash -c '
   date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
   curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
     --header "Authorization: Bearer {your_access_token}" \
@@ -55,7 +55,9 @@ seq 0 300 | xargs --max-procs=5 -I {} bash -c '
 ' _ {} | jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' > output.json
 ```
 
-Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 300 times instead of filtering by date. Sep 1 to mid-Jun is 280-290 days, and 300 is the rate limit.
+Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 290 times instead of filtering by date.
+
+Sep 1 to mid-Jun is 280-290 days, and 300 requests every 3 minutes is the rate limit. In addition, two parallel processes is a sweet spot, since the rate also means a request speed limit of ~1.67 requests per second (`--max-procs=2` requires 1-4 requests per second).
 
 # Testing
 
@@ -98,7 +100,7 @@ curl --silent --request GET \
 
 It will return either `"The provided access token has expired"` or, if not expired, `null`. 
 
-Again, query requests are also subject to rate limits of 300 requests every 3 minutes.
+Again, query requests are also subject to rate limits of 300 requests every 3 minutes, also meaning a request speed limit of ~1.67 requests per second.
 
 # Suggestion
 
