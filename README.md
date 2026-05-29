@@ -52,7 +52,7 @@ seq 0 300 | xargs --max-procs=20 -I {} bash -c '
   curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
     --header "Authorization: Bearer {your_access_token}" \
     --data-urlencode "attendance_date=$date"
-' _ {} | jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)'
+' _ {} | jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' > output.json
 ```
 
 Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 300 times instead of filtering by date. Sep 1 to mid-Jun is about 300 days.
@@ -87,7 +87,7 @@ Command will retrieve a new access token and store is value in variable: `access
 
 ## Run API Query
 
-See "Similar API Query" above, and be patient. You will retrieve a JSON response in a moment.
+See "Similar API Query" above, and be patient. You will retrieve a JSON response in a moment, and you review it in the `output.json` file. (You can also output the response directly in the terminal emulator, however JSON responses can be exceptionally long.)
 
 If the JSON response is empty (i.e., `[]`), either the query found nothing or the access token has expired. To check if the access token has expired, run the command:
 
