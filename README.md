@@ -55,6 +55,37 @@ for date in $(seq -f "%02g" 1 30 | awk '{printf "2025-09-%s\n", $1}'); do
 done | jq -s '[.[].data[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)'
 ```
 
+# Testing
+
+## Requirements
+
+school_route={subdirectory}
+
+> Example: "cais" in https://axiom.veracross.com/cais/
+
+client_id={your_client_id}
+client_secret={your_client_secret}
+
+> To obtain these credentials, a user with a OAuth_App_Admin supplemental security role must create an internal integration in Identity & Access Management
+
+## Retrieve Access Token
+
+In a terminal emulator (e.g., macOS Terminal), run the command:
+
+```bash
+export access_token=$(curl -s -X POST https://accounts.veracross.com/{subdirectory}/oauth/token \
+  -d "grant_type=client_credentials" \
+  -d "client_id={your_client_id}" \
+  -d "client_secret={your_client_secret}" \
+  -d "scope=master_attendance:list" | jq -r '.access_token')
+```
+
+Command will retrieve a new access token and store is value in variable: `access_token`. (Used tokens expire in 1 hour.)
+
+## Run API Query
+
+See above
+
 # To Do
 
 Test the API call
