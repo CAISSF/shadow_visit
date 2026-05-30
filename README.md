@@ -175,6 +175,33 @@ Again, query requests are also subject to rate limits of 300 requests every 3 mi
 
 > The command to retrieve the access token exports `access_token` and its value for you, so do not export it manually or place it in `.env`. Let it be.
 
+## Format JSON Response like Veracross UI Response
+
+Run the command:
+
+```bash
+jq -r '
+  def cat: 
+    if . == 0 then "Present" elif . == 1 then "Absence" elif . == 2 then "Tardy" elif . == 3 then "Early Dismissal" else "Unknown" end;
+
+  def fmt_time: 
+    if . == null then "" else split("T")[1] | split(":")[0:2] | (.[0] | tonumber) as $h | .[1] as $m | if $h < 12 then (if $h == 0 then "12" else ($h | tostring) end) + ":" + $m + "am" elif $h == 12 then "12:" + $m + "pm" else (($h - 12) | tostring) + ":" + $m + "pm" end end;
+
+  def fmt_date: 
+    split("-") | .[1] + "/" + .[2] + "/" + (.[0][2:]);
+
+  ["date","person","attendance_category","late_arrival_time","early_dismissal_time","notes"],
+  ["----","------","-------------------","----------------","--------------------","-----"],
+  (.[] | [(.attendance_date | fmt_date), .person, (.attendance_category | cat), (.late_arrival_time | fmt_time), (.early_dismissal_time | fmt_time), .notes])
+  | @tsv' output.json \
+  | sed 's/\t/|/g' \
+  | sed 's/^/|/' \
+  | sed 's/$/|/' > output.md
+```
+
+Open `output.md`
+
+
 # To Do
 
 - Refine selection more, since not all visits/tours are to schools.
