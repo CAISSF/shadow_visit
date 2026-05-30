@@ -47,7 +47,7 @@ An SQL-like query like this would produce a data grid already.
 # Similar API Query (macOS)
 
 ```bash
-seq 0 290 | xargs --max-procs=2 -I N bash -c '
+seq 0 289 | xargs --max-procs=2 -I N bash -c '
   date=$(date -j -v+Nd -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
   sleep 0.5; \
   curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
@@ -57,7 +57,7 @@ seq 0 290 | xargs --max-procs=2 -I N bash -c '
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' /tmp/vc_responses/*.json > output.json
 ```
 
-Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 290 times instead of filtering by date.
+Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 290 times (0, 1, 2, ..., 289) instead of filtering by date.
 
 Sep 1 to mid-Jun is 280-290 days, and 300 requests every 3 minutes is the rate limit. Two parallel processes and half-second sleep between cycles is a sweet spot, since the rate also means a request speed limit of ~1.67 requests per second (with `--max-procs=2` and `sleep 0.5` the query will make ~0.8–2 requests per second).
 
