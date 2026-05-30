@@ -93,6 +93,33 @@ Command will retrieve a new access token and store is value in variable: `access
 
 ## Run API Query (macOS)
 
+### TL;DR
+
+Run the follow commands:
+
+```bash
+cat > fetch_attendance.sh << 'EOF'
+date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
+sleep 0.5; \
+curl --silent --get "https://api.veracross.com/$school_route/v3/master_attendance" \
+  --header "Authorization: Bearer $access_token" \
+  --header "X-Page-Size: 1000" \
+  --data-urlencode "attendance_date=$date" > $1.json
+EOF
+
+chmod +x fetch_attendance.sh
+
+seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \ 
+
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > output.json && \
+
+rm $(ls *.json | grep -v output.json)
+```
+
+The commands will create a script, make it executable, execute the query, output results, and clean itself up.
+
+### Background
+
 You will need to modify the query above (see "Similar API Query"), first, otherwise the terminal emulator will complain: `xargs: command line cannot be assembled, too long`
 
 Place the query's bash command in a shell script, for example...<br>
