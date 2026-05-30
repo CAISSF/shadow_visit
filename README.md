@@ -119,7 +119,7 @@ Be patient! You will retrieve a JSON response in a moment, and you review it in 
 > In the shell script, I have also replaced `N` with `$1`, so that `xargs` passes the value of `N` (0, 1, 2, ..., 289) into the script as argument `$1`. (Any additional arguments must be `$2`, `$3`, `$4`, etc.)<p>
 > The second `N` after `fetch_attendance.sh` in the `xargs` command is what changes value and is what is passed into the script. The first `N` after `-I` defines the placeholder name, so just make sure to match the placeholders.
 
-## Empty Responses
+### Empty Responses
 
 If the JSON response is empty (i.e., `[]`), either the query found nothing or the access token has expired. To check if the access token has expired, run the command:
 
@@ -133,7 +133,7 @@ It will return either `"The provided access token has expired"` or, if not expir
 
 Again, query requests are also subject to rate limits of 300 requests every 3 minutes, also meaning a request speed limit of ~1.67 requests per second.
 
-## Suggestion
+### Suggestion
 
 1. In each command and query, replace:<p>
 `{subdirectory}` &rarr; `$school_route`<br>
