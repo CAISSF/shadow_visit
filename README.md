@@ -181,18 +181,18 @@ Run the command:
 
 ```bash
 jq --raw-output '
-  def fmt_date: 
+  def format_date: 
     split("-") | .[1] + "/" + .[2] + "/" + (.[0][2:]);
 
-  def cat: 
+  def format_category: 
     if . == 0 then "Present" elif . == 1 then "Absence" elif . == 2 then "Tardy" elif . == 3 then "Early Dismissal" else "Unknown" end;
 
-  def fmt_time: 
+  def format_time: 
     if . == null then "" else split("T")[1] | split(":")[0:2] | (.[0] | tonumber) as $h | .[1] as $m | if $h < 12 then (if $h == 0 then "12" else ($h | tostring) end) + ":" + $m + "am" elif $h == 12 then "12:" + $m + "pm" else (($h - 12) | tostring) + ":" + $m + "pm" end end;
 
   ["date","person","attendance_category","late_arrival_time","early_dismissal_time","notes"],
   ["----","------","-------------------","----------------","--------------------","-----"],
-  (.[] | [(.attendance_date | fmt_date), .person, (.attendance_category | cat), (.late_arrival_time | fmt_time), (.early_dismissal_time | fmt_time), .notes])
+  (.[] | [(.attendance_date | format_date), .person, (.attendance_category | format_category), (.late_arrival_time | format_time), (.early_dismissal_time | format_time), .notes])
   | @tsv' output.json \
   | sed 's/\t/|/g' \
   | sed 's/^/|/' \
