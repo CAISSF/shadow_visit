@@ -53,9 +53,9 @@ seq 0 289 | xargs --max-procs=2 -I N bash -c '
   curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
     --header "Authorization: Bearer {your_access_token}" \
     --header "X-Page-Size: 1000" \
-    --data-urlencode "attendance_date=$date" > ./tmp/vc_responses/N.json
+    --data-urlencode "attendance_date=$date" > N.json
 ' && \
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' /tmp/vc_responses/*.json > output.json
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > output.json
 ```
 
 Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 290 times (0, 1, 2, ..., 289) instead of filtering by date.
