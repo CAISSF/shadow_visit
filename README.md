@@ -89,9 +89,35 @@ export access_token=$(curl --silent --request POST https://accounts.veracross.co
 
 Command will retrieve a new access token and store is value in variable: `access_token`. Used tokens expire in 1 hour, so re-run this command after each token expires.
 
-## Run API Query
+## Run API Query (macOS)
 
-See "Similar API Query" above, and be patient. You will retrieve a JSON response in a moment, and you review it in the `output.json` file. (You can also output the response directly in the terminal emulator, however JSON responses can be exceptionally long.)
+You will need to modify the query above (see "Similar API Query"), first, otherwise the terminal emulator will complain: `xargs: command line cannot be assembled, too long`
+
+Place the query's bash command in a shell script, for example...<br>
+`fetch_attendance.sh`:
+```bash
+date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
+sleep 0.5; \
+curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
+  --header "Authorization: Bearer {your_access_token}" \
+  --header "X-Page-Size: 1000" \
+  --data-urlencode "attendance_date=$date" > $1.json
+```
+
+Make the script executable: `chmod +x fetch_attendance.sh`<br>
+Alternatively: `chmod 755 fetch_attendance.sh` (same result)
+
+Then, run the query using the script:<br>
+```bash
+seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > output.json
+```
+Be patient! You will retrieve a JSON response in a moment, and you review it in the `output.json` file. (You can also output the response directly in the terminal emulator, however JSON responses can be exceptionally long.)
+
+> In the shell script, I have also replaced `N` with `$1`, so that `xargs` passes the value of `N` (0, 1, 2, ..., 289) into the script as argument `$1`. (Any additional arguments must be `$2`, `$3`, `$4`, etc.)<p>
+> The second `N` after `fetch_attendance.sh` in the `xargs` command is what changes value and is what is passed into the script. The first `N` after `-I` defines the placeholder name, so just make sure to match the placeholders.
+
+## Empty Responses
 
 If the JSON response is empty (i.e., `[]`), either the query found nothing or the access token has expired. To check if the access token has expired, run the command:
 
@@ -120,7 +146,9 @@ Again, query requests are also subject to rate limits of 300 requests every 3 mi
 
 # To Do
 
-Refine selection more, since not all visits/tours are to schools.
+- Refine selection more, since not all visits/tours are to schools.
+- Optimize to only look for changes
+- Make JSON into table
 
 # Reference
 
