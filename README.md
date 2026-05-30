@@ -52,6 +52,7 @@ seq 0 289 | xargs --max-procs=2 -I N bash -c '
   sleep 0.5; \
   curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
     --header "Authorization: Bearer {your_access_token}" \
+    --header "X-Page-Size: 1000" \
     --data-urlencode "attendance_date=$date" > ./tmp/vc_responses/N.json
 ' && \
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' /tmp/vc_responses/*.json > output.json
