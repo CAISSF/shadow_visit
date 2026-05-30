@@ -178,8 +178,7 @@ Again, query requests are also subject to rate limits of 300 requests every 3 mi
 # To Do
 
 - Refine selection more, since not all visits/tours are to schools.
-- Optimize to only look for changes
-- Make JSON into table
+- Optimize to only look for changes?
 
 # Reference
 
