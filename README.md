@@ -180,7 +180,7 @@ Again, query requests are also subject to rate limits of 300 requests every 3 mi
 Run the command:
 
 ```bash
-jq -r '
+jq --raw-output '
   def fmt_date: 
     split("-") | .[1] + "/" + .[2] + "/" + (.[0][2:]);
 
