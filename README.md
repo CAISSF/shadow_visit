@@ -62,7 +62,7 @@ Why this API query is similar to, but not equivalent to, the SQL Query is that t
 
 Sep 1 to mid-Jun is 280-290 days, and 300 requests every 3 minutes is the rate limit. Two parallel processes and half-second sleep between cycles is a sweet spot, since the rate also means a request speed limit of ~1.67 requests per second (with `--max-procs=2` and `sleep 0.5` the query will make ~0.8–2 requests per second).
 
-Why generate multiple JSON files (`0.json`, `1.json`, `2.json`, etc.) and then combine them into `output.json`? Otherwise, the parallel processes corrupted `output.json`
+Why generate multiple temporary JSON files (`0.json`, `1.json`, `2.json`, etc.) and then combine them into `output.json`? Otherwise, the parallel processes corrupted `output.json`
 
 # Testing
 
@@ -142,7 +142,8 @@ Again, query requests are also subject to rate limits of 300 requests every 3 mi
 `{your_access_token}` &rarr; `$access_token`
 2. Either export the environment variables: `school_route`, `client_id` and `client_secret` with their values OR<p>
 (And this what I do) Place the environment variables and their values in a `.env` file, and export them by running: `export $(grep --invert-match '^#' .env | xargs)`
-3. _Then_ run the command to retrieve the access token, and then run the API query. 
+3. _Then_ run the command to retrieve the access token, and then run the API query.
+4. Clean up the multiple temporary JSON files with `rm $(ls *.json | grep -v output.json)`
 
 > The command to retrieve the access token exports `access_token` and its value for you, so do not export it manually or place it in `.env`. Let it be.
 
