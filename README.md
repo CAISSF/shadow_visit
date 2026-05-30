@@ -142,7 +142,7 @@ seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
 
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > output.json
 ```
-Be patient! You will retrieve a JSON response in a moment, and you review it in the `output.json` file. (You can also output the response directly in the terminal emulator, however JSON responses can be exceptionally long.)
+Be patient! You will retrieve a JSON response in a moment, and you can review it in the `output.json` file. (You can also output the response directly in the terminal emulator, however JSON responses can be exceptionally long.)
 
 > In the shell script, I have also replaced `N` with `$1`, so that `xargs` passes the value of `N` (0, 1, 2, ..., 289) into the script as argument `$1`. (Any additional arguments must be `$2`, `$3`, `$4`, etc.)<p>
 > The second `N` after `fetch_attendance.sh` in the `xargs` command is what changes value and is what is passed into the script. The first `N` after `-I` defines the placeholder name, so just make sure to match the placeholders.
