@@ -139,6 +139,7 @@ Alternatively: `chmod 755 fetch_attendance.sh` (same result)
 Then, run the query using the script:<br>
 ```bash
 seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
+
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > output.json
 ```
 Be patient! You will retrieve a JSON response in a moment, and you review it in the `output.json` file. (You can also output the response directly in the terminal emulator, however JSON responses can be exceptionally long.)
