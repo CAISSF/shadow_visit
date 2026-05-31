@@ -1,3 +1,5 @@
+<!-- reword and put TL;DR up here -->
+
 # Veracross UI Query
 
 Say we want to query every 8th grade student who is either visiting or touring a high school or is shadowing a high school student.
@@ -98,22 +100,24 @@ Command will retrieve a new access token and store is value in variable: `access
 Run the follow commands:
 
 ```bash
+mkdir temp/
+
 cat > fetch_attendance.sh << 'EOF'
 date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
 sleep 0.5; \
 curl --silent --get "https://api.veracross.com/$school_route/v3/master_attendance" \
   --header "Authorization: Bearer $access_token" \
   --header "X-Page-Size: 1000" \
-  --data-urlencode "attendance_date=$date" > $1.json
+  --data-urlencode "attendance_date=$date" > temp/$1.json
 EOF
 
 chmod +x fetch_attendance.sh
 
 seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \ 
 
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > output.json && \
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > output.json && \
 
-rm $(ls *.json | grep -v output.json)
+rm -rf temp/
 ```
 
 The commands will create a script, make it executable, execute the query, output results, and clean itself up.
@@ -171,7 +175,7 @@ Again, query requests are also subject to rate limits of 300 requests every 3 mi
 2. Either export the environment variables: `school_route`, `client_id` and `client_secret` with their values OR<p>
 (And this what I do) Place the environment variables and their values in a `.env` file, and export them by running: `export $(grep --invert-match '^#' .env | xargs)`
 3. _Then_ run the command to retrieve the access token, and then run the API query.
-4. Clean up the multiple temporary JSON files with `rm $(ls *.json | grep -v output.json)`
+4. Better yet, create a temporary folder: `mkdir temp/`, generate the multiple JSON files in there: `$1.json` &rarr; `temp/$1.json` and `*.json` &rarr; `temp/*.json` respectively, and once you complete your query clean up the temporary JSON files with `rm -rf temp/`
 
 > The command to retrieve the access token exports `access_token` and its value for you, so do not export it manually or place it in `.env`. Let it be.
 
