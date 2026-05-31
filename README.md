@@ -161,7 +161,7 @@ It will return either `"The provided access token has expired"` or, if not expir
 
 Again, query requests are also subject to rate limits of 300 requests every 3 minutes, also meaning a request speed limit of ~1.67 requests per second.
 
-### Suggestion
+### Suggestions
 
 1. In each command and query, replace:<p>
 `{subdirectory}` &rarr; `$school_route`<br>
