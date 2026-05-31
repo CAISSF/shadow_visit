@@ -56,7 +56,8 @@ seq 0 289 | xargs --max-procs=2 -I N bash -c '
     --header "Authorization: Bearer {your_access_token}" \
     --header "X-Page-Size: 1000" \
     --data-urlencode "attendance_date=$date" > N.json
-' && \
+'
+
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > output.json
 ```
 
@@ -113,9 +114,9 @@ EOF
 
 chmod +x fetch_attendance.sh
 
-seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \ 
+seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > output.json && \
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > output.json
 
 rm -rf temp/
 ```
@@ -142,7 +143,7 @@ Alternatively: `chmod 755 fetch_attendance.sh` (same result)
 
 Then, run the query using the script:<br>
 ```bash
-seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
+seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > output.json
 ```
