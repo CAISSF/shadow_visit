@@ -212,8 +212,8 @@ jq --raw-output '
   ["----","------","-------------------","----------------","--------------------","-----"],
   (.[] | [(.attendance_date | format_date), .person, (.attendance_category | format_category), (.late_arrival_time | format_time), (.early_dismissal_time | format_time), .notes])
   | @tsv' output.json \
-  | sed 's/\t/|/g' \
   | sed 's/^/|/' \
+  | sed 's/\t/|/g' \
   | sed 's/$/|/' > output.md
 ```
 
