@@ -219,6 +219,9 @@ jq --raw-output '
 
 Open `output.md`
 
+`jq` is a command-line tool for parsing, filtering, and transforming JSON, and `@tsv` is a jq formatter. `jq` extracts arrays from `output.json`, and `@tsv` converts them into tab separated strings.
+
+`sed` is a command-line tool that reads text line by line and applies additional transformations; its basic syntax is `sed 's/find/replace/g'`. `^` means start of line; `\t` means tab character; and `$` means end of line.
 
 # To Do
 
