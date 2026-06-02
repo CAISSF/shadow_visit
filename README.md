@@ -114,6 +114,8 @@ Sep 1 to mid-Jun is 280-290 days, and 300 requests every 3 minutes is the rate l
 
 Why generate multiple temporary JSON files (`0.json`, `1.json`, `2.json`, etc.) and then combine them into `output.json`? Otherwise, the parallel processes corrupted `output.json`
 
+> The API parameter for PERSON: Grade Level Enrolled At, grade_level_id, is not exposed to the master_attendance endpoint. What this means is that, had the Grade 8 filter been relevant, one would have to call master_attendance and an endpoint that exposes grade_level_id and then join both lists one self.
+
 ### Testing
 
 #### Retrieve Credentials {#credentials}
