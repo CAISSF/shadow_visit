@@ -10,6 +10,7 @@ In a terminal emulator (e.g., macOS Terminal), run these commands:
 echo "school_route={subdirectory}" >> .env
 echo "client_id={your_client_id}" >> .env
 echo "client_secret={your_client_secret}" >> .env
+
 export $(grep --invert-match '^#' .env | xargs)
 ```
 
