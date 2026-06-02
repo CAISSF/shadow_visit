@@ -2,7 +2,9 @@
 
 ## TL;DR
 
-Run the following commands:
+Retrieve your [credentials &#x2193;](#credentials) and [access token &#x2193;](#token).
+
+Then, run the following commands:
 
 ```bash
 mkdir temp/
@@ -25,7 +27,7 @@ jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tou
 rm -rf temp/
 ```
 
-The commands will create a script, make it executable, execute the query, output results, and clean itself up.
+The commands will create a script, make it executable, execute the query, output results, and clean itself up. Your credentials do not expire, but your access code does.
 
 ## Background
 
@@ -98,7 +100,7 @@ Why generate multiple temporary JSON files (`0.json`, `1.json`, `2.json`, etc.) 
 
 ### Testing
 
-#### Retrieve Credentials
+#### Retrieve Credentials {#credentials}
 
 School route:<br>
 `school_route={subdirectory}`
@@ -111,7 +113,7 @@ Client ID and Secret:<br>
 
 To obtain the client ID and secret, a user with a OAuth_App_Admin supplemental security role must create an internal integration in Identity & Access Management
 
-#### Retrieve Access Token
+#### Retrieve Access Token {#token}
 
 In a terminal emulator (e.g., macOS Terminal), run the command:
 
