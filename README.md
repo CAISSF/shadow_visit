@@ -7,18 +7,16 @@ Retrieve your [credentials &#x2193;](#credentials).
 In a terminal emulator (e.g., macOS Terminal), run the command:
 
 ```bash
-export access_token=$(curl --silent --request POST https://accounts.veracross.com/{subdirectory}/oauth/token \
+export access_token=$(curl --silent --request POST https://accounts.veracross.com/$school_route/oauth/token \
   --data "grant_type=client_credentials" \
   --data "client_id=$client_id" \
   --data "client_secret=$client_secret" \
   --data "scope=master_attendance:list" | jq --raw-output '.access_token')
 ```
 
-Then, run the following commands:
+Create a script:
 
 ```bash
-mkdir temp/
-
 cat > fetch_attendance.sh << 'EOF'
 date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
 sleep 0.5; \
@@ -29,6 +27,12 @@ curl --silent --get "https://api.veracross.com/$school_route/v3/master_attendanc
 EOF
 
 chmod +x fetch_attendance.sh
+```
+
+Then, run these commands:
+
+```bash
+mkdir temp/
 
 seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 
@@ -37,7 +41,9 @@ jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tou
 rm -rf temp/
 ```
 
-The commands will retrieve and store your access token, create a script, make it executable, execute the query, output results, and clean itself up. Your credentials do not expire, but your access code does.
+The commands will retrieve and store your access token, create a script and make it executable, and cleanly run the query and output results. Your credentials do not expire, but your access code _does_.
+
+Here on, you can simply re-retrieve and store your access token and cleanly re-run the query and output results. You do not need to re-create the script.
 
 ## Background
 
@@ -123,7 +129,7 @@ Client ID and Secret:<br>
 
 To obtain the client ID and secret, a user with a OAuth_App_Admin supplemental security role must create an internal integration in Identity & Access Management
 
-#### Retrieve Access Token {#token}
+#### Retrieve Access Token
 
 In a terminal emulator (e.g., macOS Terminal), run the command:
 
