@@ -54,6 +54,8 @@ The commands will store your credentials and make them available, retrieve and s
 
 Here on, you can simply re-retrieve and store your access token and cleanly re-run the query and output results. You do not need to re-create the script.
 
+You can view query progress by opening the temp/ folder.
+
 ## Background
 
 ### Running Veracross Query Using UI
