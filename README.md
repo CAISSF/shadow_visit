@@ -4,7 +4,16 @@
 
 Retrieve your [credentials &#x2193;](#credentials).
 
-In a terminal emulator (e.g., macOS Terminal), run the command:
+In a terminal emulator (e.g., macOS Terminal), run these commands:
+
+```bash
+echo "school_route={subdirectory}" >> .env
+echo "client_id={your_client_id}" >> .env
+echo "client_secret={your_client_secret}" >> .env
+export $(grep --invert-match '^#' .env | xargs)
+```
+
+Then, run this command:
 
 ```bash
 export access_token=$(curl --silent --request POST https://accounts.veracross.com/$school_route/oauth/token \
@@ -41,7 +50,7 @@ jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit
 rm -rf temp/
 ```
 
-The commands will retrieve and store your access token, create a script and make it executable, and cleanly run the query and output results. Your credentials do not expire, but your access code _does_.
+The commands will store your credentials and make them available, retrieve and store your access token, create a script and make it executable, and cleanly run the query and output results. Your credentials do not expire, but your access code _does_.
 
 Here on, you can simply re-retrieve and store your access token and cleanly re-run the query and output results. You do not need to re-create the script.
 
