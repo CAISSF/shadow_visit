@@ -2,7 +2,17 @@
 
 ## TL;DR
 
-Retrieve your [credentials &#x2193;](#credentials) and [access token &#x2193;](#token).
+Retrieve your [credentials &#x2193;](#credentials).
+
+In a terminal emulator (e.g., macOS Terminal), run the command:
+
+```bash
+export access_token=$(curl --silent --request POST https://accounts.veracross.com/{subdirectory}/oauth/token \
+  --data "grant_type=client_credentials" \
+  --data "client_id=$client_id" \
+  --data "client_secret=$client_secret" \
+  --data "scope=master_attendance:list" | jq --raw-output '.access_token')
+```
 
 Then, run the following commands:
 
@@ -27,7 +37,7 @@ jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tou
 rm -rf temp/
 ```
 
-The commands will create a script, make it executable, execute the query, output results, and clean itself up. Your credentials do not expire, but your access code does.
+The commands will retrieve and store your access token, create a script, make it executable, execute the query, output results, and clean itself up. Your credentials do not expire, but your access code does.
 
 ## Background
 
