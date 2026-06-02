@@ -1,5 +1,4 @@
-<!-- reword and put TL;DR up here -->
-
+# Running Veracross Query Using API
 
 ## TL;DR
 
@@ -30,7 +29,7 @@ The commands will create a script, make it executable, execute the query, output
 
 ## Background
 
-### Veracross UI Query
+### Running Veracross Query Using UI
 
 Say we want to query every 8th grade student who is either visiting or touring a high school or is shadowing a high school student.
 
@@ -99,16 +98,18 @@ Why generate multiple temporary JSON files (`0.json`, `1.json`, `2.json`, etc.) 
 
 ### Testing
 
-#### Requirements
+#### Retrieve Credentials
 
+School route:<br>
 `school_route={subdirectory}`
 
-> Example: "cais" in https://axiom.veracross.com/cais/
+Example: "cais" (sans quotes) in https://axiom.veracross.com/cais/
 
+Client ID and Secret:<br>
 `client_id={your_client_id}`<br>
 `client_secret={your_client_secret}`
 
-> To obtain these credentials, a user with a OAuth_App_Admin supplemental security role must create an internal integration in Identity & Access Management
+To obtain the client ID and secret, a user with a OAuth_App_Admin supplemental security role must create an internal integration in Identity & Access Management
 
 #### Retrieve Access Token
 
@@ -181,7 +182,7 @@ Again, query requests are also subject to rate limits of 300 requests every 3 mi
 
 > The command to retrieve the access token exports `access_token` and its value for you, so do not export it manually or place it in `.env`. Let it be.
 
-## Format JSON Response like Veracross UI Response
+## Format JSON Response like Veracross UI Response (Optional)
 
 Run the command:
 
