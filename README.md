@@ -46,7 +46,7 @@ mkdir temp/ && \
 
 seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
 
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|v[is]+t|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > output.json && \
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|v[is]+t|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > filtered.json && \
 
 rm -rf temp/
 ```
@@ -119,14 +119,14 @@ seq 0 289 | xargs --max-procs=2 -I N bash -c '
     --data-urlencode "attendance_date=$date" > N.json
 '
 
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > output.json
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > filtered.json
 ```
 
 Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 290 times (0, 1, 2, ..., 289) instead of filtering by date.
 
 Sep 1 to mid-Jun is 280-290 days, and 300 requests every 3 minutes is the rate limit. Two parallel processes and half-second sleep between cycles is a sweet spot, since the rate also means a request speed limit of ~1.67 requests per second (with `--max-procs=2` and `sleep 0.5` the query will make ~0.8–2 requests per second, per my discussion with Claude). A greater number of parallel processes, less sleep, splitting up parallel processes, and/or clever workarounds could work to accelerate requests, but you risk hitting the rate limit or violating terms of service.
 
-Why generate multiple temporary JSON files (`0.json`, `1.json`, `2.json`, etc.) and then combine them into `output.json`? Otherwise, the parallel processes corrupted `output.json`
+Why generate multiple temporary JSON files (`0.json`, `1.json`, `2.json`, etc.) and then combine them into `filtered.json`? Otherwise, the parallel processes corrupted `filtered.json`
 
 > The API parameter for PERSON: Grade Level Enrolled At, grade_level_id, is not exposed to the master_attendance endpoint. What this means is that, had the Grade 8 filter been relevant, one would have to call master_attendance and an endpoint that exposes grade_level_id and then join both lists one self.
 
@@ -181,7 +181,7 @@ Then, run the query using the script:<br>
 ```bash
 seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|v[is]+t|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > output.json
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|v[is]+t|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > filtered.json
 ```
 Be patient! You will retrieve a JSON response in a moment, and you can review it in the `output.json` file. (You can also output the response directly in the terminal emulator, however JSON responses can be exceptionally long.)
 
