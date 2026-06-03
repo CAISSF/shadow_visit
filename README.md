@@ -207,6 +207,8 @@ Again, query requests are also subject to rate limits of 300 requests every 3 mi
 
 Not all visits/tours are to schools, however, so we must refine the query results more.
 
+COMING SOON!
+
 <!-- utilizing claude: test worked, documented, just need to refine and tidy up -->
 
 
