@@ -189,6 +189,11 @@ Be patient! You will retrieve a JSON response in a moment, and you can review it
 > The second `N` after `fetch_attendance.sh` in the `xargs` command is what changes value and is what is passed into the script. The first `N` after `-I` defines the placeholder name, so just make sure to match the placeholders.<p>
 > `sha[dw]+ow|visit|v[is]+t|tour` is a regular expression that will catch common misspellings of "shadow" and "visit" (e.g., _shawdow_ and _vist_). "Tour" is not misspelled commonly.
 
+##### Utilize Claude (or Another AI Assistant) to Filter More
+
+Not all visits/tours are to schools, however, so we must refine the query results more.
+
+
 ##### Empty Responses
 
 If the JSON response is empty (i.e., `[]`), either the query found nothing or the access token has expired. To check if the access token has expired, run the command:
@@ -202,15 +207,6 @@ curl --silent --request GET \
 It will return either `"The provided access token has expired"` or, if not expired, `null`. 
 
 Again, query requests are also subject to rate limits of 300 requests every 3 minutes, also meaning a request speed limit of ~1.67 requests per second.
-
-##### Utilize Claude (or Another AI Assistant) to Filter More
-
-Not all visits/tours are to schools, however, so we must refine the query results more.
-
-COMING SOON!
-
-<!-- utilizing claude: test worked, documented, just need to refine and tidy up -->
-
 
 ##### Suggestions
 
