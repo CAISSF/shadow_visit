@@ -124,7 +124,7 @@ jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tou
 
 Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 290 times (0, 1, 2, ..., 289) instead of filtering by date.
 
-Sep 1 to mid-Jun is 280-290 days, and 300 requests every 3 minutes is the rate limit. Two parallel processes and half-second sleep between cycles is a sweet spot, since the rate also means a request speed limit of ~1.67 requests per second (with `--max-procs=2` and `sleep 0.5` the query will make ~0.8–2 requests per second).
+Sep 1 to mid-Jun is 280-290 days, and 300 requests every 3 minutes is the rate limit. Two parallel processes and half-second sleep between cycles is a sweet spot, since the rate also means a request speed limit of ~1.67 requests per second (with `--max-procs=2` and `sleep 0.5` the query will make ~0.8–2 requests per second, per my discussion with Claude).
 
 Why generate multiple temporary JSON files (`0.json`, `1.json`, `2.json`, etc.) and then combine them into `output.json`? Otherwise, the parallel processes corrupted `output.json`
 
