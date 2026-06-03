@@ -187,7 +187,7 @@ Be patient! You will retrieve a JSON response in a moment, and you can review it
 
 > In the shell script, I have also replaced `N` with `$1`, so that `xargs` passes the value of `N` (0, 1, 2, ..., 289) into the script as argument `$1`. (Any additional arguments must be `$2`, `$3`, `$4`, etc.)<p>
 > The second `N` after `fetch_attendance.sh` in the `xargs` command is what changes value and is what is passed into the script. The first `N` after `-I` defines the placeholder name, so just make sure to match the placeholders.<p>
-> `sha[dw]+ow|visit|v[is]+t|tour` will catch common misspellings of "shadow" and "visit" (e.g., _shawdow_ and _vist_). "Tour" is not misspelled commonly.
+> `sha[dw]+ow|visit|v[is]+t|tour` is a regular expression that will catch common misspellings of "shadow" and "visit" (e.g., _shawdow_ and _vist_). "Tour" is not misspelled commonly.
 
 ##### Empty Responses
 
