@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Retrieve your [credentials &#x2193;](#credentials).
+Retrieve your credentials (see "Testing").
 
 In a terminal emulator (e.g., macOS Terminal), run these commands:
 
@@ -55,7 +55,7 @@ The commands will store your credentials and make them available, retrieve and s
 
 Here on, you can simply re-retrieve and store your access token and cleanly re-run the query and output results. You do not need to re-create the script.
 
-You can view query progress by opening the temp/ folder. See `output.json` for query results; optionally, you can [make the results more readable &#x2193;](#tables).
+You can view query progress by opening the temp/ folder. See `output.json` for query results; optionally, you can make the results more readable (see "Format JSON Response like Veracross UI Response").
 
 ## Background
 
@@ -130,7 +130,7 @@ Why generate multiple temporary JSON files (`0.json`, `1.json`, `2.json`, etc.) 
 
 ### Testing
 
-#### Retrieve Credentials {#credentials}
+#### Retrieve Credentials
 
 School route:<br>
 `school_route={subdirectory}`
@@ -215,7 +215,7 @@ Again, query requests are also subject to rate limits of 300 requests every 3 mi
 
 > The command to retrieve the access token exports `access_token` and its value for you, so do not export it manually or place it in `.env`. Let it be.
 
-## Format JSON Response like Veracross UI Response (Optional) {#tables}
+## Format JSON Response like Veracross UI Response (Optional)
 
 Run the command:
 
