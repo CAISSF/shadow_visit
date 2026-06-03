@@ -7,9 +7,9 @@ Retrieve your credentials (see "Testing").
 In a terminal emulator (e.g., macOS Terminal), run these commands:
 
 ```bash
-echo "school_route={subdirectory}" >> .env
-echo "client_id={your_client_id}" >> .env
-echo "client_secret={your_client_secret}" >> .env
+echo "school_route={subdirectory}" >> .env && \
+echo "client_id={your_client_id}" >> .env && \
+echo "client_secret={your_client_secret}" >> .env && \
 
 export $(grep --invert-match '^#' .env | xargs)
 ```
@@ -34,7 +34,7 @@ curl --silent --get "https://api.veracross.com/$school_route/v3/master_attendanc
   --header "Authorization: Bearer $access_token" \
   --header "X-Page-Size: 1000" \
   --data-urlencode "attendance_date=$date" > temp/$1.json
-EOF
+EOF && \
 
 chmod +x fetch_attendance.sh
 ```
@@ -42,11 +42,11 @@ chmod +x fetch_attendance.sh
 Then, run these commands:
 
 ```bash
-mkdir temp/
+mkdir temp/ && \
 
-seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
+seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
 
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|v[is]+t|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > output.json
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|v[is]+t|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > output.json && \
 
 rm -rf temp/
 ```
