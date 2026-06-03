@@ -52,7 +52,7 @@ jq '[.[] | {person_id, person}]' temp/filtered.json > temp/lookup.json && \
 jq '[.[] | del(.person)]' temp/filtered.json > temp/sanitized.json && \
 
 claude --model sonnet --permission-mode auto \
-"From temp/sanitized.json, return data in which the person_id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. If data is ambiguous, then include the data anyway. Do not wrap the output in markdown code blocks. Return valid JSON only, no other text. Double check if any data is missing." > temp/filtered_ai.json && \
+"From temp/sanitized.json, return data in which the person_id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. If data is ambiguous, then include the data anyway. Double check if any data is missing, and do not wrap the output in markdown code blocks. Return valid JSON only, no other text." > temp/filtered_ai.json && \
 
 jq --slurpfile people temp/lookup.json '
   . as $filtered |
@@ -219,11 +219,13 @@ Prompt Claude (or another AI assistant) to extract all data from `sanitized.json
 
 ```bash
 claude --model sonnet --permission-mode auto \
-"From sanitized.json, return data in which the person_id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. If data is ambiguous, then include the data anyway. Do not wrap the output in markdown code blocks. Return valid JSON only, no other text. Double check if any data is missing." > filtered_ai.json
+"From sanitized.json, return data in which the person_id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. If data is ambiguous, then include the data anyway. Double check if any data is missing, and do not wrap the output in markdown code blocks. Return valid JSON only, no other text." > filtered_ai.json
 ```
 > Haiku model is too aggressive at excluding data, and Sonnet model may miss data on the first pass. Auto permission mode allows Claude to make its own decisions based on its internal safety model.
 
 Wait for a moment! For me, it took about 9 1/2 minutes to complete on a MacBook Air M1.
+
+<!-- still missing some records "Ilya has his Lick Wilmerding Shadow visit" and may have hit rate limit -->
 
 Afterward, associate each person_id with person:
 
