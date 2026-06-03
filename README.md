@@ -51,6 +51,8 @@ jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit
 rm -rf temp/
 ```
 
+<!-- utilizing claude too -->
+
 The commands will store your credentials and make them available, retrieve and store your access token, create a script and make it executable, and cleanly run the query and output results. Your credentials do not expire, but your access code _does_.
 
 Here on, you can simply re-retrieve and store your access token and cleanly re-run the query and output results. You do not need to re-create the script.
@@ -201,6 +203,13 @@ It will return either `"The provided access token has expired"` or, if not expir
 
 Again, query requests are also subject to rate limits of 300 requests every 3 minutes, also meaning a request speed limit of ~1.67 requests per second.
 
+##### Utilize Claude (or Another AI Assistant) to Filter More
+
+Not all visits/tours are to schools, however, so we must refine the query results more.
+
+<!-- utilizing claude: test worked, documented, just need to refine and tidy up -->
+
+
 ##### Suggestions
 
 1. In each command and query, replace:<p>
@@ -260,7 +269,6 @@ Open `output.md`
 
 # To Do
 
-- Refine selection more, since not all visits/tours are to schools.
 - Optimize to only look for changes?
 
 # Reference
