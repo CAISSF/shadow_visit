@@ -345,4 +345,4 @@ Open `output.md`
 # References
 
 - [Veracross API Documentation](https://api-docs.veracross.com/) (e.g., endpoints, parameters, headers, and rate limits)
-- Command manuals: `man curl`, `man jq`, `man sed`, `man echo`, `man export`, `man grep`, `man xargs`, `man cat`, `man date`, `man sleep`, `man chmod`, `man mkdir`, `man seq`, `man bash`, `man rm` (e.g., syntax, options, and usage)
+- Unix/Linux command manuals: `man curl`, `man jq`, `man sed`, `man echo`, `man export`, `man grep`, `man xargs`, `man cat`, `man date`, `man sleep`, `man chmod`, `man mkdir`, `man seq`, `man bash`, `man rm` (e.g., syntax, options, and usage)
