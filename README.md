@@ -46,7 +46,7 @@ mkdir temp/ && \
 
 seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
 
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|v[is]+t|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > temp/filtered.json && \
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > temp/filtered.json && \
 
 jq '[.[] | {person_id, person}]' temp/filtered.json > temp/lookup.json && \
 jq '[.[] | del(.person)]' temp/filtered.json > temp/sanitized.json && \
@@ -191,13 +191,13 @@ Then, run the query using the script:<br>
 ```bash
 seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|v[is]+t|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > filtered.json
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > filtered.json
 ```
 Be patient! You will retrieve a JSON response in a moment, and you can review it in the `output.json` file. (You can also output the response directly in the terminal emulator, however JSON responses can be exceptionally long.)
 
 > In the shell script, I have also replaced `N` with `$1`, so that `xargs` passes the value of `N` (0, 1, 2, ..., 289) into the script as argument `$1`. (Any additional arguments must be `$2`, `$3`, `$4`, etc.)<p>
 > The second `N` after `fetch_attendance.sh` in the `xargs` command is what changes value and is what is passed into the script. The first `N` after `-I` defines the placeholder name, so just make sure to match the placeholders.<p>
-> `sha[dw]+ow|visit|v[is]+t|tour` is a regular expression that will catch common misspellings of "shadow" and "visit" (e.g., _shawdow_ and _vist_). "Tour" is not misspelled commonly.
+> `sha[dw]+ow|visit|\\bv[is]+t\\b|tour` is a regular expression that will catch common misspellings of "shadow" and "visit" (e.g., _shawdow_ and _vist_). Word boundary anchors, `\\b`, effectively exclude correct spellings that are unrelated (e.g., _cavity_ and _activist_). "Tour" is not misspelled commonly.
 
 ##### Utilize Claude (or Another AI Assistant) to Filter More
 
