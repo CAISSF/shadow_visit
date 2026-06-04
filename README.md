@@ -88,7 +88,7 @@ Add **Attendance Category**<br>
 Add **Late Arrival Time**<br>
 Add **Early Dismissal Time**<br>
 Add **Notes** contains "shadow," "visit" or "tour"<br>
-> For Notes, input criteria value: `shadow; visit; tour`. Every school visit/tour entry contains at least one of these three words. (I would also include common misspellings.)
+> For Notes, input criteria value: `shadow; visit; tour`. Every school visit/tour entry contains at least one of these three words. (I would also include common misspellings, but exclude results where a student accompanies a sibling to their high school visit, tour, or shadow visit rather than doing their own school search.)
 
 Ascending order by Attendance Date, then ascending order by Person
 
@@ -113,7 +113,7 @@ WHERE attendance_date >= DATE '2025-09-01'
   )
 ORDER BY attendance_date, person;
 ```
-An SQL-like query like this would produce a data grid already. (Again, I would also include common misspellings.)
+An SQL-like query like this would produce a data grid already. (Again, I would also include common misspellings, but exclude results where a student accompanies a sibling.)
 
 ### Similar API Query (macOS)
 
