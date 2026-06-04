@@ -48,16 +48,16 @@ seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
 
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > temp/filtered.json && \
 
-jq '[.[] | {person_id, person}]' temp/filtered.json > temp/lookup.json && \
+jq '[.[] | {id, notes}]' temp/filtered.json > temp/lookup.json && \
 jq '[.[] | del(.person)]' temp/filtered.json > temp/sanitized.json && \
 
 claude --model sonnet --permission-mode auto \
-"From temp/sanitized.json, return data in which the person_id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. If data is ambiguous, then include the data anyway. Double check if any data is missing. Return valid JSON only, unwrapped." > temp/filtered_ai.json && \
+"From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. If data is ambiguous, then include the data anyway. Double check if any data is missing. Return valid JSON only, unwrapped." > temp/filtered_ai.json && \
 
 jq --slurpfile people temp/lookup.json '
   . as $filtered |
-  ($people[0] | map({(.person_id | tostring): .person}) | add) as $lookup |
-  $filtered | map(.person_id = $lookup[.person_id | tostring])
+  ($people[0] | map({(.id | tostring): .person}) | add) as $lookup |
+  $filtered | map(.id = $lookup[.id | tostring])
 ' temp/filtered_ai.json > output.json && \
 
 rm -rf temp/
@@ -203,10 +203,10 @@ Be patient! You will retrieve a JSON response in a moment, and you can review it
 
 Not all visits/tours are to schools, however, so we must refine the query results more.
 
-Extract `person_id` and `person` data from `filtered.json`, and keep the data associated: (we will use the extracted JSON file as a lookup table)
+Extract `id` and `person` data from `filtered.json`, and keep the data associated: (we will use the extracted JSON file as a lookup table)
 
 ```bash
-jq '[.[] | {person_id, person}]' filtered.json > lookup.json
+jq '[.[] | {id, person}]' filtered.json > lookup.json
 ```
 
 Sanitize `filtered.json` by deleting `person` data:
@@ -219,7 +219,7 @@ Prompt Claude (or another AI assistant) to extract all data from `sanitized.json
 
 ```bash
 claude --model sonnet --permission-mode auto \
-"From sanitized.json, return data in which the person_id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. If data is ambiguous, then include the data anyway. Double check if any data is missing. Return valid JSON only, unwrapped." > filtered_ai.json
+"From sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. If data is ambiguous, then include the data anyway. Double check if any data is missing. Return valid JSON only, unwrapped." > filtered_ai.json
 ```
 > Haiku model is too aggressive at excluding data, and Sonnet model may miss data on the first pass. Auto permission mode allows Claude to make its own decisions based on its internal safety model.
 
@@ -227,13 +227,13 @@ Wait for a moment! For me, it took about 9 1/2 minutes to complete on a MacBook 
 
 <!-- still missing some records "Ilya has his Lick Wilmerding Shadow visit" and may have hit rate limit -->
 
-Afterward, associate each person_id with person:
+Afterward, associate each id with person:
 
 ```bash
 jq --slurpfile people lookup.json '
   . as $filtered |
-  ($people[0] | map({(.person_id | tostring): .person}) | add) as $lookup |
-  $filtered | map(.person_id = $lookup[.person_id | tostring])
+  ($people[0] | map({(.id | tostring): .person}) | add) as $lookup |
+  $filtered | map(.id = $lookup[.id | tostring])
 ' filtered_ai.json > output.json
 ```
 
