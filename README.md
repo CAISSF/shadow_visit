@@ -215,7 +215,7 @@ Sanitize `filtered.json` by deleting `person` data:
 jq '[.[] | del(.person)]' filtered.json > sanitized.json
 ```
 
-Prompt Claude (or another AI assistant) to extract all data from `sanitized.json` of any students who are likely neither visiting schools, nor touring schools, nor shadow visiting:
+Prompt Claude (or another AI assistant) to extract all data from `sanitized.json` of any students who are likely visiting schools, touring schools, or shadow visiting:
 
 ```bash
 claude --model sonnet --permission-mode auto \
