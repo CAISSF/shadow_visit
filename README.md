@@ -238,7 +238,7 @@ jq --slurpfile lookup filtered_ai.json '
 ' filtered.json > output.json
 ```
 
-##### Empty Responses
+##### Empty API Responses
 
 If the JSON response is empty (i.e., `[]`), either the query found nothing or the access token has expired. To check if the access token has expired, run the command:
 
