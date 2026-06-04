@@ -252,6 +252,31 @@ It will return either `"The provided access token has expired"` or, if not expir
 
 Again, query requests are also subject to rate limits of 300 requests every 3 minutes, also meaning a request speed limit of ~1.67 requests per second.
 
+##### Data Workflow
+
+Essentially, we retrieve student records dated Sep 1 to mid-Jun, and then we filter them: first with a regular expression, and then with an AI assistant.
+
+```bash
+curl: *.json 
+      |
+[sha[dw]+ow|visit|\\bv[is]+t\\b|tour]
+      |
+      v
+filtered.json
+      |
+      |---[id,notes]--> sanitized.json
+      |                      |
+      |                [AI assistant]
+    [all]                    |
+      |                      v
+      |               filtered_ai.json
+      |                      |
+      +------[id match]------+
+                  |
+                  v
+             output.json
+```
+
 ##### Suggestions
 
 1. In each command and query, replace:<p>
