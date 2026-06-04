@@ -48,17 +48,15 @@ seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
 
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > temp/filtered.json && \
 
-jq '[.[] | {id, notes}]' temp/filtered.json > temp/lookup.json && \
-jq '[.[] | del(.person)]' temp/filtered.json > temp/sanitized.json && \
+jq '[.[] | {id, notes}]' temp/filtered.json > temp/sanitized.json && \
 
 claude --model sonnet --permission-mode auto \
 "From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array starting with [ and ending with ]. No preamble, no explanation, no markdown, no code fences." > temp/filtered_ai.json && \
 
-jq --slurpfile people temp/lookup.json '
-  . as $filtered |
-  ($people[0] | map({(.id | tostring): .person}) | add) as $lookup |
-  $filtered | map(.id = $lookup[.id | tostring])
-' temp/filtered_ai.json > output.json && \
+jq --slurpfile lookup temp/filtered_ai.json '
+  ($lookup[0] | map(.id)) as $ids |
+  [.[] | select(.id | IN($ids[]))]
+' temp/filtered.json > output.json && \
 
 rm -rf temp/
 ```
@@ -203,41 +201,42 @@ Be patient! You will retrieve a JSON response in a moment, and you can review it
 
 Not all visits/tours are to schools, however, so we must refine the query results more.
 
-Extract `id` and `person` data from `filtered.json`, and keep the data associated: (we will use the extracted JSON file as a lookup table)
+~~Extract `id` and `person` data from `filtered.json`, and keep the data associated: (we will use the extracted JSON file as a lookup table)~~ REDUNDANT
+
+~~```bash~~
+~~jq '[.[] | {id, person}]' filtered.json > lookup.json~~
+~~```~~
+
+~~Sanitize `filtered.json` by deleting `person` data:~~ INEFFICIENT
+
+~~```bash~~
+~~jq '[.[] | del(.person)]' filtered.json > sanitized.json~~
+~~```~~
+
+Extract `id` and `notes` data from `filtered.json`: (do not use `person_id`, since it repeats)
 
 ```bash
-jq '[.[] | {id, person}]' filtered.json > lookup.json
+jq '[.[] | {id, notes}]' filtered.json > sanitized.json
 ```
 
-Sanitize `filtered.json` by deleting `person` data:
-
-```bash
-jq '[.[] | del(.person)]' filtered.json > sanitized.json
-```
-
-Prompt Claude (or another AI assistant) to extract all data from `sanitized.json` of any students who are likely visiting schools, touring schools, or shadow visiting:
+Prompt Claude (or another AI assistant) to extract `id` and `notes` data from `sanitized.json` of any students who are likely visiting schools, touring schools, or shadow visiting:
 
 ```bash
 claude --model sonnet --permission-mode auto \
 "From sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array starting with [ and ending with ]. No preamble, no explanation, no markdown, no code fences." > filtered_ai.json
 ```
-> Haiku model is too aggressive at excluding data, and Sonnet model may miss data on the first pass. Auto permission mode allows Claude to make its own decisions based on its internal safety model.
+> Haiku model is too aggressive at excluding data, and Sonnet model may miss data on the first pass. In fact, extracting `id` and `notes` data for the prompt, not only saves AI tokens and — thus — lowers the chance of hitting rate limits, but also mitigates the risk of AI excluding data. (We also saved AI tokens by not relying on Claude \[or another AI assistant\] to filter for "shadow," "visit," "tour," and common misspellings, since we did not need to rely on it.) Auto permission mode allows Claude to make its own decisions based on its internal safety model. Requesting Claude to make a triple check produced identical content.
 
-Wait for a moment! For me, it took about 9 1/2 minutes to complete on a MacBook Air M1.
+Wait for a moment! For me, it took about 3-4 minutes to complete on a MacBook Air M1.
 
-<!-- still missing some records "Ilya has his Lick Wilmerding Shadow visit" and may have hit rate limit -->
-
-Afterward, associate each id with person:
+Afterward, trim `filtered.json`:
 
 ```bash
-jq --slurpfile people lookup.json '
-  . as $filtered |
-  ($people[0] | map({(.id | tostring): .person}) | add) as $lookup |
-  $filtered | map(.id = $lookup[.id | tostring])
-' filtered_ai.json > output.json
+jq --slurpfile lookup filtered_ai.json '
+  ($lookup[0] | map(.id)) as $ids |
+  [.[] | select(.id | IN($ids[]))]
+' filtered.json > output.json
 ```
-
-We could have also relied on Claude (or another AI assistant) to filter for "shadow," "visit," "tour," and common misspellings. However, since we did not need to, in effect we saved tokens for refining the query results here. 
 
 ##### Empty Responses
 
