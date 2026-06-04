@@ -344,6 +344,7 @@ Open `output.md`
 
 # References
 
+- [Veracross Axiom Help](https://community.veracross.com/s/) (API Overview, OAuth app setup and IAM configuration in the UI)
 - [Veracross API Documentation](https://api-docs.veracross.com/) (e.g., endpoints, parameters, headers, and rate limits)
 - [Claude Code command-line interface](https://code.claude.com/docs/en/cli-reference) (commands and flags)
 - Unix/Linux command manuals: `man curl`, `man jq`, `man sed`, `man echo`, `man export`, `man grep`, `man xargs`, `man cat`, `man date`, `man sleep`, `man chmod`, `man mkdir`, `man seq`, `man bash`, `man rm` (e.g., syntax, options, and usage)
