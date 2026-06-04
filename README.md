@@ -277,6 +277,10 @@ filtered.json
              output.json
 ```
 
+What remains is only student records that reference visiting or revising, touring, or shadow visiting a high school for admissions.
+
+No student records that reference visiting grandparents, family, or siblings. No records referencing doctor, dentist, wellness, or emergency room visits. No sports tournaments (e.g., fencing, golf, soccer, and volleyball). No passport appointments. No records in which a student accompanies a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. No shadow visits to another K-8 school, and no traveling abroad.
+
 ##### Suggestions
 
 1. In each command and query, replace:<p>
