@@ -44,7 +44,14 @@ Then, run these commands:
 ```bash
 mkdir temp/ && \
 
-seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
+start="2025-09-01" && \
+today=$(date +%Y-%m-%d) && \
+end="2026-06-11" && \
+
+today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) && \
+end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) && \
+
+seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
 
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > temp/filtered.json && \
 
@@ -238,6 +245,21 @@ jq --slurpfile lookup filtered_ai.json '
 ' filtered.json > output.json
 ```
 
+##### Optimize API Query More
+
+###### Confine Date Range
+
+Since only data for current and upcoming visits, tours, and shadow visits are useful, we can confine the date range more.
+
+start="2025-09-01" # default
+today=$(date +%Y-%m-%d)
+end="2026-06-11" # default
+
+today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 ))
+end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 ))
+
+seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
+
 ##### Empty API Responses
 
 If the JSON response is empty (i.e., `[]`), either the query found nothing or the access token has expired. To check if the access token has expired, run the command:
@@ -347,4 +369,4 @@ Open `output.md`
 - [Veracross Axiom Help](https://community.veracross.com/s/) (API Overview, OAuth app setup and IAM configuration in the UI)
 - [Veracross API Documentation](https://api-docs.veracross.com/) (e.g., endpoints, parameters, headers, and rate limits)
 - [Claude Code command-line interface](https://code.claude.com/docs/en/cli-reference) (commands and flags)
-- Unix/Linux command manuals: `man curl`, `man jq`, `man sed`, `man echo`, `man export`, `man grep`, `man xargs`, `man cat`, `man date`, `man sleep`, `man chmod`, `man mkdir`, `man seq`, `man bash`, `man rm` (e.g., syntax, options, and usage)
+- Unix/Linux command manuals: `man curl`, `man jq`, `man sed`, `man echo`, `man export`, `man grep`, `man xargs`, `man cat`, `man date`, `man sleep`, `man chmod`, `man mkdir`, `man seq`, `man bash`, `man rm`, and `man date` (e.g., syntax, options, and usage)
