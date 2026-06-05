@@ -76,7 +76,10 @@ Filter them with Claude (or another AI assistant):
 jq '[.[] | {id, notes}]' temp/changed.json > temp/sanitized.json && \
 
 claude --model sonnet --permission-mode auto \
-"From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array starting with [ and ending with ]. No preamble, no explanation, no markdown, no code fences." > temp/filtered_ai.json
+"From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > temp/filtered_ai.json && \
+
+sed -n '/^\[/,/^\]$/p' temp/filtered_ai.json > temp/filtered_clean.json && \
+mv temp/filtered_clean.json temp/filtered_ai.json
 ```
 
 Output or update results:
@@ -261,11 +264,18 @@ Prompt Claude (or another AI assistant) to extract `id` and `notes` data from `s
 
 ```bash
 claude --model sonnet --permission-mode auto \
-"From sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array starting with [ and ending with ]. No preamble, no explanation, no markdown, no code fences." > filtered_ai.json
+"From sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > filtered_ai.json
 ```
 > Haiku model is too aggressive at excluding data, and Sonnet model may miss data on the first pass. In fact, extracting `id` and `notes` data for the prompt, not only saves AI tokens and — thus — lowers the chance of hitting rate limits, but also mitigates the risk of AI excluding data. (We also saved AI tokens by not relying on Claude \[or another AI assistant\] to filter for "shadow," "visit," "tour," and common misspellings, since we did not need to rely on it.) Auto permission mode allows Claude to make its own decisions based on its internal safety model. Requesting Claude to make a triple check produced identical content.
 
 Wait for a moment! For me, it took about 3-4 minutes to complete on a MacBook Air M1.
+
+Sometimes, Claude may format the JSON array incorrectly, even if you additionally prompt it to start the array with `[` and end it with `]`, and even if you additionally prompt it: `"...No preamble, no explanation, no markdown, no code fences."` So, I would run an extra command to ensure that the array is formatted correctly:
+
+```bash
+sed -n '/^\[/,/^\]$/p' temp/filtered_ai.json > temp/filtered_clean.json && \
+mv temp/filtered_clean.json temp/filtered_ai.json
+```
 
 Afterward, trim `filtered.json`:
 
