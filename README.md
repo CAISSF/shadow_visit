@@ -349,8 +349,8 @@ If the JSON response is empty (i.e., `[]`), either the query found nothing or th
 
 ```bash
 curl --silent --request GET \
-  --url "https://api.veracross.com/$school_route/v3/master_attendance" \
-  --header "Authorization: Bearer $access_token" | jq .error
+  --url "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
+  --header "Authorization: Bearer {your_access_token}" | jq .error
 ```
 
 It will return either `"The provided access token has expired"` or, if not expired, `null`. 
