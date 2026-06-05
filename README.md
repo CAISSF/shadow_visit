@@ -341,6 +341,8 @@ mv temp/output_updated.json output.json
 
 We would just need to check that `output.json` exists, and add `-p` option to `mkdir temp/` command in case the folder already exists.
 
+If you choose another AI assistant, do not choose the assistant if it is just because it is faster. Test its results against what you would get using my Claude Sonnet prompt. Not that, say, ChatGPT or Gemini would not work, but I did not test them.
+
 ##### Empty API Responses
 
 If the JSON response is empty (i.e., `[]`), either the query found nothing or the access token has expired. To check if the access token has expired, run the command:
