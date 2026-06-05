@@ -2,9 +2,9 @@
 
 ## TL;DR
 
-Retrieve your credentials (see "Testing").
+### Step 1: Set Credentials
 
-In a terminal emulator (e.g., macOS Terminal), run these commands:
+Retrieve your credentials (see "Testing"), and then in a terminal emulator (e.g., macOS Terminal) run these commands:
 
 ```bash
 echo "school_route={subdirectory}" >> .env && \
@@ -14,7 +14,9 @@ echo "client_secret={your_client_secret}" >> .env && \
 export $(grep --invert-match '^#' .env | xargs)
 ```
 
-Then, run this command:
+### Step 2: Get Access Token (Expires in 1 Hour)
+
+Run this command:
 
 ```bash
 export access_token=$(curl --silent --request POST https://accounts.veracross.com/$school_route/oauth/token \
@@ -24,7 +26,7 @@ export access_token=$(curl --silent --request POST https://accounts.veracross.co
   --data "scope=master_attendance:list" | jq --raw-output '.access_token')
 ```
 
-Create a script:
+### Step 3: Create a Script
 
 ```bash
 cat > fetch_attendance.sh << 'EOF'
@@ -39,7 +41,7 @@ EOF && \
 chmod +x fetch_attendance.sh
 ```
 
-Use it to retrieve student records:
+### Step 4A: Retrieve Student Records
 
 ```bash
 mkdir -p temp/ && \
@@ -54,7 +56,9 @@ end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" 
 seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 ```
 
-Filter them with regular expressions, and if possible focus on records that have changed:
+### Step 4B: Filter the Student Records
+
+Use regular expressions, and focus on records that have changed:
 
 ```bash
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > temp/filtered.json && \
@@ -70,7 +74,7 @@ else
 fi
 ```
 
-Filter them with Claude (or another AI assistant):
+### Step 4C: Filter with Claude (or Another AI Assistant)
 
 ```bash
 jq '[.[] | {id, notes}]' temp/changed.json > temp/sanitized.json && \
@@ -82,7 +86,7 @@ sed -n '/^\[/,/^\]$/p' temp/filtered_ai.json > temp/filtered_clean.json && \
 mv temp/filtered_clean.json temp/filtered_ai.json
 ```
 
-Output or update results:
+### Step 4D: Output or Update Results
 
 ```bash
 if [ -f output.json ]; then
@@ -104,7 +108,7 @@ rm -rf temp/
 
 The commands will store your credentials and make them available, retrieve and store your access token, create a script and make it executable, and cleanly, sensitively, thoroughly, and efficiently run the query and output results. Your credentials do not expire, but your access code _does_. Data processed in AI is sanitized, so feel free to utilize an alternative AI assistant.
 
-Here on, you can simply re-retrieve and store your access token and cleanly re-run the query and output results. You do not need to re-create the script.
+Here on, you can simply re-retrieve and store your access token (Step 2) and cleanly re-run the query and output results (Steps 4A-4D). You do not need to re-set the credentials (Step 1) and re-create the script (Step 3).
 
 You can view query progress by opening the temp/ folder. See `output.json` for query results; optionally, you can make the results more readable (see "Format JSON Response like Veracross UI Response").
 
