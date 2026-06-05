@@ -251,6 +251,7 @@ jq --slurpfile lookup filtered_ai.json '
 
 Since only data for current and upcoming visits, tours, and shadow visits are useful, we can confine the date range more.
 
+```bash
 start="2025-09-01" # default
 today=$(date +%Y-%m-%d)
 end="2026-06-11" # default
@@ -259,6 +260,7 @@ today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$sta
 end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 ))
 
 seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
+```
 
 ##### Empty API Responses
 
