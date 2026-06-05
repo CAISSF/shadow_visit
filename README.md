@@ -39,7 +39,7 @@ EOF && \
 chmod +x fetch_attendance.sh
 ```
 
-Then, run these commands:
+Use it to retrieve student records:
 
 ```bash
 mkdir temp/ && \
@@ -51,8 +51,12 @@ end="2026-06-11" && \
 today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) && \
 end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) && \
 
-seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
+seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
+```
 
+Filter them with regular expressions, and if possible focus on records that have changed:
+
+```bash
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > temp/filtered.json && \
 
 if [ -f output.json ]; then
@@ -63,13 +67,21 @@ if [ -f output.json ]; then
 ' temp/filtered.json > temp/changed.json
 else
   cp temp/filtered.json temp/changed.json
-fi && \
+fi
+```
 
+Filter them with Claude (or another AI assistant):
+
+```bash
 jq '[.[] | {id, notes}]' temp/changed.json > temp/sanitized.json && \
 
 claude --model sonnet --permission-mode auto \
-"From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array starting with [ and ending with ]. No preamble, no explanation, no markdown, no code fences." > temp/filtered_ai.json && \
+"From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array starting with [ and ending with ]. No preamble, no explanation, no markdown, no code fences." > temp/filtered_ai.json
+```
 
+Output or update results:
+
+```bash
 if [ -f output.json ]; then
   jq --slurpfile changed temp/changed.json '
   ($changed[0] | map({key: (.id | tostring), value: .}) | from_entries) as $changes |
@@ -419,7 +431,7 @@ Open `output.md`
 
 - Optimize to only look for changes:<brp>
 (first attempt) could use `last_modified_date`, but the parameter seems to have no usefulness (e.g., one record has `attendance_date`= "09/19/25" and `last_modified_date` = "02/02/26"). Even if the parameter were useful, almost 2,000 records exist with `last_modified_date` = "02/02/26" — possibly a system migration, data import, or administrative update, and maximum `X-Page-Size` = 1000 (i.e., we can only call a maximum of 1,000 records at once). We could still use it, but I do not feel as though `last_modified_date` is as reliable as `attendance_date`.<br>
-(second attempt) confining date range
+(second attempt) confining date range and only utilizing Claude (or another AI assistant) to filter modified notes
 
 # References
 
