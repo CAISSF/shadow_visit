@@ -1,5 +1,7 @@
 # Running Veracross Query Using API
 
+Say we want to query every 8th grade student who is either visiting or touring a high school or is shadowing a high school student.
+
 ## TL;DR
 
 ### Step 1: Set Credentials
@@ -115,8 +117,6 @@ You can view query progress by opening the temp/ folder. See `output.json` for q
 ## Background
 
 ### Running Veracross Query Using UI
-
-Say we want to query every 8th grade student who is either visiting or touring a high school or is shadowing a high school student.
 
 To achieve this in the UI, go to the LaunchPad > Daily Logistics > Attendance > General > Find Daily Attendance.
 
