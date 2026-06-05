@@ -445,11 +445,9 @@ Open `output.md`
 
 `sed` is a command-line tool that reads text line by line and applies additional transformations; its basic syntax is `sed 's/find/replace/g'`. `^` means start of line; `\t` means tab character; and `$` means end of line.
 
-# To Do
+# Note
 
-- Optimize to only look for changes:<brp>
-(first attempt) could use `last_modified_date`, but the parameter seems to have no usefulness (e.g., one record has `attendance_date`= "09/19/25" and `last_modified_date` = "02/02/26"). Even if the parameter were useful, almost 2,000 records exist with `last_modified_date` = "02/02/26" — possibly a system migration, data import, or administrative update, and maximum `X-Page-Size` = 1000 (i.e., we can only call a maximum of 1,000 records at once). We could still use it, but I do not feel as though `last_modified_date` is as reliable as `attendance_date`.<br>
-(second attempt) confining date range and only utilizing Claude (or another AI assistant) to filter modified notes
+I did try to optimize the query by using `last_modified_date`, but the parameter seems to have no usefulness (e.g., one record has `attendance_date` = `09/19/25` and `last_modified_date` = `02/02/26`). Even if the parameter were useful, almost 2,000 records exist with `last_modified_date` = "02/02/26" — possibly due to a system migration, data import, or administrative update, which would exceed the maximum `X-Page-Size` = 1000 (i.e., no greater than 1,000 records can be called at once). We could still use it, perhaps by splitting up calls, but I do not feel as though `last_modified_date` is as reliable as `attendance_date`.
 
 # References
 
