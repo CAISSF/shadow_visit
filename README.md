@@ -55,20 +55,39 @@ seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
 
 jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > temp/filtered.json && \
 
-jq '[.[] | {id, notes}]' temp/filtered.json > temp/sanitized.json && \
+if [ -f output.json ]; then
+  jq 'map({key: (.id | tostring), value: .notes}) | from_entries' output.json > temp/reference.json && \
+
+  jq --slurpfile old temp/reference.json '
+  [.[] | . as $record | select($old[0][$record.id | tostring] != null and $old[0][$record.id | tostring] != $record.notes)]
+' temp/filtered.json > temp/changed.json
+else
+  cp temp/filtered.json temp/changed.json
+fi && \
+
+jq '[.[] | {id, notes}]' temp/changed.json > temp/sanitized.json && \
 
 claude --model sonnet --permission-mode auto \
 "From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array starting with [ and ending with ]. No preamble, no explanation, no markdown, no code fences." > temp/filtered_ai.json && \
 
-jq --slurpfile lookup temp/filtered_ai.json '
-  ($lookup[0] | map(.id)) as $ids |
-  [.[] | select(.id | IN($ids[]))]
-' temp/filtered.json > output.json && \
+if [ -f output.json ]; then
+  jq --slurpfile changed temp/changed.json '
+  ($changed[0] | map({key: (.id | tostring), value: .}) | from_entries) as $changes |
+  [.[] | if $changes[.id | tostring] then $changes[.id | tostring] else . end]
+' output.json > temp/output_updated.json && \
+
+  mv temp/output_updated.json output.json
+else
+  jq --slurpfile lookup temp/filtered_ai.json '
+    ($lookup[0] | map(.id)) as $ids |
+    [.[] | select(.id | IN($ids[]))]
+  ' temp/filtered.json > output.json 
+fi && \
 
 rm -rf temp/
 ```
 
-The commands will store your credentials and make them available, retrieve and store your access token, create a script and make it executable, and cleanly, sensitively and thoroughly run the query and output results. Your credentials do not expire, but your access code _does_. Data processed in AI is sanitized, so feel free to utilize an alternative AI assistant.
+The commands will store your credentials and make them available, retrieve and store your access token, create a script and make it executable, and cleanly, sensitively, thoroughly, and efficiently run the query and output results. Your credentials do not expire, but your access code _does_. Data processed in AI is sanitized, so feel free to utilize an alternative AI assistant.
 
 Here on, you can simply re-retrieve and store your access token and cleanly re-run the query and output results. You do not need to re-create the script.
 
@@ -262,6 +281,40 @@ end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" 
 seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 ```
 
+###### Only Utilize Claude (or Another AI Assistant) to Filter Modified Notes
+
+Extract `id` and `notes` data from `output.json`:
+
+```bash
+jq 'map({key: (.id | tostring), value: .notes}) | from_entries' output.json > temp/reference.json
+```
+Only keep data where notes changed:
+
+```bash
+jq --slurpfile old temp/reference.json '
+  [.[] | . as $record | select($old[0][$record.id | tostring] != null and $old[0][$record.id | tostring] != $record.notes)]
+' temp/filtered.json > temp/changed.json
+```
+
+Extract `id` and `notes` data from `changed.json`, instead of from `filtered.json`:
+
+```bash
+jq '[.[] | {id, notes}]' temp/changed.json > temp/sanitized.json
+```
+
+Prompt Claude (or another AI assistant), then update `output.json`: (could also have split up commands like above)
+
+```bash
+jq --slurpfile changed temp/changed.json '
+  ($changed[0] | map({key: (.id | tostring), value: .}) | from_entries) as $changes |
+  [.[] | if $changes[.id | tostring] then $changes[.id | tostring] else . end]
+' output.json > temp/output_updated.json && \
+
+mv temp/output_updated.json output.json
+```
+
+We would just need to check that `output.json` exists.
+
 ##### Empty API Responses
 
 If the JSON response is empty (i.e., `[]`), either the query found nothing or the access token has expired. To check if the access token has expired, run the command:
@@ -364,7 +417,9 @@ Open `output.md`
 
 # To Do
 
-- Optimize to only look for changes?
+- Optimize to only look for changes:<brp>
+(first attempt) could use `last_modified_date`, but the parameter seems to have no usefulness (e.g., one record has `attendance_date`= "09/19/25" and `last_modified_date` = "02/02/26"). Even if the parameter were useful, almost 2,000 records exist with `last_modified_date` = "02/02/26" — possibly a system migration, data import, or administrative update, and maximum `X-Page-Size` = 1000 (i.e., we can only call a maximum of 1,000 records at once). We could still use it, but I do not feel as though `last_modified_date` is as reliable as `attendance_date`.<br>
+(second attempt) confining date range
 
 # References
 
