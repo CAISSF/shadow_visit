@@ -381,6 +381,7 @@ No student records that reference visiting grandparents, family, or siblings. No
 (And this what I do) Place the environment variables and their values in a `.env` file, and export them by running: `export $(grep --invert-match '^#' .env | xargs)`
 3. _Then_ run the command to retrieve the access token, and then run the API query.
 4. Better yet, create a temporary folder: `mkdir temp/`, generate the multiple JSON files in there: `$1.json` &rarr; `temp/$1.json` and `*.json` &rarr; `temp/*.json` respectively, and once you complete your query clean up the temporary JSON files with `rm -rf temp/`
+5. If any notes in `output.json` contain Windows carriage returns with escape sequences, `\r\n`, or UNIX escape sequences, `\n`, keep them; this way, if you POST the notes to Veracross then its UI will display the field correctly.
 
 > The command to retrieve the access token exports `access_token` and its value for you, so do not export it manually or place it in `.env`. Let it be.
 
@@ -414,7 +415,7 @@ jq --raw-output '
 
   ["date","person","attendance_category","late_arrival_time","early_dismissal_time","notes"],
   ["----","------","-------------------","----------------","--------------------","-----"],
-  (.[] | [(.attendance_date | format_date), .person, (.attendance_category | format_category), (.late_arrival_time | format_time), (.early_dismissal_time | format_time), .notes])
+  (.[] | [(.attendance_date | format_date), .person, (.attendance_category | format_category), (.late_arrival_time | format_time), (.early_dismissal_time | format_time), (.notes | gsub("\r\n"; "<br>") | gsub("\n"; "<br>"))])
   | @tsv' output.json \
   | sed 's/^/|/' \
   | sed 's/\t/|/g' \
