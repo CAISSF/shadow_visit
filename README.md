@@ -42,7 +42,7 @@ chmod +x fetch_attendance.sh
 Use it to retrieve student records:
 
 ```bash
-mkdir temp/ && \
+mkdir -p temp/ && \
 
 start="2025-09-01" && \
 today=$(date +%Y-%m-%d) && \
@@ -325,7 +325,7 @@ jq --slurpfile changed temp/changed.json '
 mv temp/output_updated.json output.json
 ```
 
-We would just need to check that `output.json` exists.
+We would just need to check that `output.json` exists, and add `-p` option to `mkdir temp/` command in case the folder already exists.
 
 ##### Empty API Responses
 
