@@ -353,14 +353,17 @@ curl: *.json
       v
 filtered.json
       |
-      |---[id,notes]--> sanitized.json
+[new/changed]
+      |
+      v
+      |-- {id,notes} -> sanitized.json
       |                      |
       |                [AI assistant]
-    [all]                    |
+    {all}                    |
       |                      v
       |               filtered_ai.json
       |                      |
-      +------[id match]------+
+      +----> {id match} <----+
                   |
                   v
              output.json
