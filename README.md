@@ -272,7 +272,7 @@ claude --model sonnet --permission-mode auto \
 ```
 > Haiku model is too aggressive at excluding data, and Sonnet model may miss data on the first pass. In fact, extracting `id` and `notes` data for the prompt, not only saves AI tokens and — thus — lowers the chance of hitting rate limits, but also mitigates the risk of AI excluding data. (We also saved AI tokens by not relying on Claude \[or another AI assistant\] to filter for "shadow," "visit," "tour," and common misspellings, since we did not need to rely on it.) Auto permission mode allows Claude to make its own decisions based on its internal safety model. Requesting Claude to make a triple check produced identical content.
 
-Wait for a moment! For me, it took about 3-4 minutes to complete on a MacBook Air M1.
+Wait for a moment! For me, it took about 3-4 minutes to complete ~~on a MacBook Air M1~~ LOCAL HARDWARE IS IRRELEVANT
 
 Sometimes, Claude may format the JSON array incorrectly, even if you additionally prompt it to start the array with `[` and end it with `]`, and even if you additionally prompt it: `"...No preamble, no explanation, no markdown, no code fences."` So, I would run an extra command to ensure that the array is formatted correctly:
 
