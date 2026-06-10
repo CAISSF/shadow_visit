@@ -118,24 +118,30 @@ You can view query progress by opening the temp/ folder. See `output.json` for q
 
 ### Running Veracross Query Using UI
 
-To achieve this in the UI, go to the LaunchPad > Daily Logistics > Attendance > General > Find Daily Attendance.
+To achieve a similar result in the UI, go to the LaunchPad > Daily Logistics > Attendance > General > Find Daily Attendance.
 
 Click on the Query tab...<br>
 Visualization: Data Grid
 
 Click on the Fields tab...<br>
 Add **Attendance Date** is on or after `09/01/25`<br>
-~~Add **PERSON: Grade Level Enrolled At** in `Grade 8`<br>~~
-~~> PERSON: Grade Level Enrolled At has a One-To-Many Relationship because some students are in multiple preschool levels. (Not an issue for Grade 8.)~~ Visits/tours start in Grade 8, so this filter is redundant.
+Add **Person**
 
-Add **Person**<br>
+~~Add **PERSON: Grade Level Enrolled At** in `Grade 8`<br>~~
+~~> PERSON: Grade Level Enrolled At has a One-To-Many Relationship because some students are in multiple preschool levels. (Not an issue for Grade 8.)~~ PERSON: Grade Level Enrolled At is _not_ necessarily student's current grade level
+
+Add **PERSON: Current Grade** contains exactly (Grade 8)<br>
+Add **Notes** contains "shadow," or "visit," or "tour"
 Add **Attendance Category**<br>
 Add **Late Arrival Time**<br>
 Add **Early Dismissal Time**<br>
-Add **Notes** contains "shadow," "visit" or "tour"<br>
-> For Notes, input criteria value: `shadow; visit; tour`. Every school visit/tour entry contains at least one of these three words. (I would also include common misspellings, but exclude results where a student accompanies a sibling to their high school visit, tour, or shadow visit rather than doing their own school search.)
 
-Ascending order by Attendance Date, then ascending order by Person
+> For Notes, input criteria value: `shadow; visit; tour`. Every school visit/tour entry contains at least one of these three words. (I would also include common misspellings.)
+
+Ascending order by Attendance Date, then ascending order by Person<br>
+You can hide the PERSON: Current Grade field
+
+Unfortunately, in the UI there is no other way to filter entries more. Many remaining entries are not school visits/tours (e.g., student visits family, participates in a tournament, or accompanies a sibling to their high school visit, tour, or shadow visit rather than doing their own school search). We need more granularity!
 
 ### Equivalent SQL Query
 
