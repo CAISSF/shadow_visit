@@ -127,7 +127,7 @@ You can view query progress by opening the temp/ folder. See `output.json` for q
 
 ## Background
 
-### Running Veracross Query Using UI
+### Running Query Using Veracross UI
 
 To achieve a similar result in the UI, go to the LaunchPad > Daily Logistics > Attendance > General > Find Daily Attendance.
 
@@ -173,7 +173,7 @@ To obtain the client ID and secret, a user with a OAuth_App_Admin supplemental s
 
 #### Enable Scopes
 
-Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, and Early Dismissal Time records data are located at endpoint `master_attendance`. PERSON: Current Grade data is located at endpoint `directory/student`.
+Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, and Early Dismissal Time parameters are located at (i.e., exposed by) endpoint `master_attendance`. PERSON: Current Grade parameter is located at endpoint `directory/student`.
 
 In your newly created OAuth application, enable two scopes: `master_attendance:list` and `directory.student:list`. We will request the scopes with an access token next, so we can access the endpoints.
 
@@ -198,7 +198,7 @@ Replace `{subdirectory}`, `{your_client_id}`, and `{your_client_secret}` with th
 Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, Early Dismissal Time, etc.
 
 ```bash
-seq 0 289 | xargs --max-procs=2 -I N bash -c '
+seq 0 283 | xargs --max-procs=2 -I N bash -c '
   date=$(date -j -v+Nd -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
   sleep 0.5; \
   curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
@@ -207,6 +207,10 @@ seq 0 289 | xargs --max-procs=2 -I N bash -c '
     --data-urlencode "attendance_date=$date" > N-attendance.json
 '
 ```
+
+The bash command will run 284 times (0, 1, 2, 3, ..., 283), in order to generate attendance records for Sep 1, Sep 2, Sep 3, ..., Jun 10/11 (`0-attendance.json`, `1-attendance.json`, `2-attendance.json`, `3-attendance.json`, ..., `283-attendance.json`). These attendance records are of _all_ students, not just of eighth grade students.
+
+The command will also run at most two cycles at a time (`--max-procs=2`) with a half-second pause between each cycle (`sleep 0.5`), together to speed up processing and not trigger rate limits. (Rate limit is 300 requests every 3 minutes, meaning the speed limit is ~1.67 requests per second; 284 requests < 300, and our speed ~0.8–2 requests per second per my discussion with Claude. A greater number of parallel processes, less sleep, splitting up parallel processes, and/or clever workarounds could work to accelerate requests, but you risk hitting the rate limit or violating terms of service.)
 
 ##### Retrieve Grade 8 Student Records
 
@@ -231,48 +235,18 @@ jq --slurp --slurpfile names grade8.json '
 ' *-attendance.json > filtered8.json
 ```
 
-Filter for notes containing "shadow," or "visit," or "tour."
+You might ask: Why generate multiple temporary JSON files and then combine them into `filtered8.json`? The answer to that question is: Otherwise, the parallel processes corrupted `filtered8.json`
+
+
+Next, filter for notes containing "shadow," or "visit," or "tour."
 
 ```bash
 jq --slurp '[.[] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))]' filtered8.json > filtered8v.json
 ```
 
-Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 290 times (0, 1, 2, ..., 289) instead of filtering by date.
+Entries in `filtered8v.json` will be identical to entries in the Veracross UI, again had you run the query using the UI instead of the API; however, the API returns entries in JSON format, along with additional fields. 
 
-Sep 1 to mid-Jun is 280-290 days, and 300 requests every 3 minutes is the rate limit. Two parallel processes and half-second sleep between cycles is a sweet spot, since the rate also means a request speed limit of ~1.67 requests per second (with `--max-procs=2` and `sleep 0.5` the query will make ~0.8–2 requests per second, per my discussion with Claude). A greater number of parallel processes, less sleep, splitting up parallel processes, and/or clever workarounds could work to accelerate requests, but you risk hitting the rate limit or violating terms of service.
-
-Why generate multiple temporary JSON files (`0.json`, `1.json`, `2.json`, etc.) and then combine them into `filtered.json`? Otherwise, the parallel processes corrupted `filtered.json`
-
-> The API parameter for PERSON: Grade Level Enrolled At, grade_level_id, is not exposed to the master_attendance endpoint. What this means is that, had the Grade 8 filter been relevant, one would have to call master_attendance and an endpoint that exposes grade_level_id and then join both lists one self.
-
-### Testing
-
-#### Retrieve Credentials
-
-School route:<br>
-`school_route={subdirectory}`
-
-Example: "cais" (sans quotes) in https://axiom.veracross.com/cais/
-
-Client ID and Secret:<br>
-`client_id={your_client_id}`<br>
-`client_secret={your_client_secret}`
-
-To obtain the client ID and secret, a user with a OAuth_App_Admin supplemental security role must create an internal integration in Identity & Access Management
-
-#### Retrieve Access Token
-
-In a terminal emulator (e.g., macOS Terminal), run the command:
-
-```bash
-export access_token=$(curl --silent --request POST https://accounts.veracross.com/{subdirectory}/oauth/token \
-  --data "grant_type=client_credentials" \
-  --data "client_id={your_client_id}" \
-  --data "client_secret={your_client_secret}" \
-  --data "scope=master_attendance:list" | jq --raw-output '.access_token')
-```
-
-Command will retrieve a new access token and store is value in variable: `access_token`. Used tokens expire in 1 hour, so _re-run this command after each token expires_.
+We will make the entries more readable and tidy up the fields, later. For now, it is important to achieve more granularity so that all remaining entries are school visits/tours.
 
 #### Run API Query (macOS)
 
