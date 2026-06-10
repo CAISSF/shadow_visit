@@ -90,13 +90,15 @@ jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"
 ### Step 4C: Filter with Claude (or Another AI Assistant)
 
 ```bash
-jq '[.[] | {id, notes}]' temp/changed.json > temp/sanitized.json && \
+jq '[.[] | {id, notes}]' temp/filtered8v.json > temp/sanitized.json && \
 
 claude --model sonnet --permission-mode auto \
+"From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > temp/filtered8v_ai.json && \
+
 "From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > temp/filtered_ai.json && \
 
-sed -n '/^\[/,/^\]$/p' temp/filtered_ai.json > temp/filtered_clean.json && \
-mv temp/filtered_clean.json temp/filtered_ai.json
+sed -n '/^\[/,/^\]$/p' temp/filtered8v_ai.json > temp/filtered8v_ai_clean.json && \
+mv temp/filtered8v_ai_clean.json temp/filtered8v_ai.json
 ```
 
 ### Step 4D: Output or Update Results
@@ -212,11 +214,14 @@ Make the script executable: `chmod +x fetch_attendance.sh`<br>
 Alternatively: `chmod 755 fetch_attendance.sh` (same result)
 
 Then, run the script with this command:
+
 ```bash
 seq 0 283 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 ```
 
-The bash command will run 284 times (0, 1, 2, 3, ..., 283), in order to generate attendance records for Sep 1, Sep 2, Sep 3, ..., Jun 10/11 (`0-attendance.json`, `1-attendance.json`, `2-attendance.json`, `3-attendance.json`, ..., `283-attendance.json`). These attendance records are of _all_ students, not just of eighth grade students.
+Remember: These attendance records are of _all_ students, not just of eighth grade students.
+
+The bash command will run 284 times (0, 1, 2, 3, ..., 283), in order to generate attendance records for Sep 1, Sep 2, Sep 3, ..., Jun 10/11 (`0-attendance.json`, `1-attendance.json`, `2-attendance.json`, `3-attendance.json`, ..., `283-attendance.json`). `xargs` passes the value of `N` (0, 1, 2, 3, ..., 283) into the script as argument `$1`. (More specifically, the second `N` after `fetch_attendance.sh` is what changes value and is what is passed into the script. The first `N` after `-I` defines the placeholder name, so just make sure to match the placeholders. Any additional arguments in the script must be `$2`, `$3`, `$4`, etc.) 
 
 The command will also run at most two cycles at a time (`--max-procs=2`) with a half-second pause between each cycle (`sleep 0.5`), together to speed up processing and not trigger rate limits. (Rate limit is 300 requests every 3 minutes, meaning the speed limit is ~1.67 requests per second; 284 requests < 300, and our speed ~0.8–2 requests per second per my discussion with Claude. A greater number of parallel processes, less sleep, splitting up parallel processes, and/or clever workarounds could work to accelerate requests, but you risk hitting the rate limit or violating terms of service.)
 
@@ -247,79 +252,66 @@ jq --slurp --slurpfile names grade8.json '
 
 You might ask: Why generate multiple temporary JSON files and then combine them into `filtered8.json`? The answer to that question is: Otherwise, the parallel processes corrupted `filtered8.json`
 
-
 Next, filter for notes containing "shadow," or "visit," or "tour."
 
 ```bash
 jq --slurp '[.[] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))]' filtered8.json > filtered8v.json
 ```
 
-Entries in `filtered8v.json` will be identical to entries in the Veracross UI, again had you run the query using the UI instead of the API; however, the API returns entries in JSON format, along with additional fields. 
+Entries in `filtered8v.json` will be identical to entries in the Veracross UI, again had you run the query using the UI instead of the API; however, the API returns entries in JSON format, along with additional fields (e.g., `id` which we will use coming up, and `person_id`). (You can also output commands directly in the terminal emulator, however JSON responses can be exceptionally long.)
 
 We will make the entries more readable and tidy up the fields, later. For now, it is important to achieve more granularity so that all remaining entries are school visits/tours.
 
+##### More Granularity
 
+###### Regular Expression
 
-
-
-
-
-
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > filtered8.json
-```
-Be patient! You will retrieve a JSON response in a moment, and you can review it in the `output.json` file. (You can also output the response directly in the terminal emulator, however JSON responses can be exceptionally long.)
-
-> In the shell script, I have also replaced `N` with `$1`, so that `xargs` passes the value of `N` (0, 1, 2, ..., 289) into the script as argument `$1`. (Any additional arguments must be `$2`, `$3`, `$4`, etc.)<p>
-> The second `N` after `fetch_attendance.sh` in the `xargs` command is what changes value and is what is passed into the script. The first `N` after `-I` defines the placeholder name, so just make sure to match the placeholders.<p>
-> `sha[dw]+ow|visit|\\bv[is]+t\\b|tour` is a regular expression that will catch common misspellings of "shadow" and "visit" (e.g., _shawdow_ and _vist_). Word boundary anchors, `\\b`, effectively exclude correct spellings that are unrelated (e.g., _cavity_ and _activist_). "Tour" is not misspelled commonly.
-
-##### Utilize Claude (or Another AI Assistant) to Filter More
-
-Not all visits/tours are to schools, however, so we must refine the query results more.
-
-~~Extract `id` and `person` data from `filtered.json`, and keep the data associated: (we will use the extracted JSON file as a lookup table)~~ REDUNDANT
-
-~~```bash~~
-~~jq '[.[] | {id, person}]' filtered.json > lookup.json~~
-~~```~~
-
-~~Sanitize `filtered.json` by deleting `person` data:~~ INEFFICIENT
-
-~~```bash~~
-~~jq '[.[] | del(.person)]' filtered.json > sanitized.json~~
-~~```~~
-
-Extract `id` and `notes` data from `filtered.json`: (do not use `person_id`, since it repeats)
+Filter for notes containing "shadow," or "visit," or "tour," _or_ any common misspellings of each.
 
 ```bash
-jq '[.[] | {id, notes}]' filtered.json > sanitized.json
+jq --slurp '[.[] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' filtered8.json > filtered8v.json
 ```
 
-Prompt Claude (or another AI assistant) to extract `id` and `notes` data from `sanitized.json` of any students who are likely visiting schools, touring schools, or shadow visiting:
+`sha[dw]+ow|visit|\\bv[is]+t\\b|tour` is a regular expression that will catch misspellings of "shadow" and "visit" (e.g., _shawdow_ and _vist_). The regular expression also goes a step further by excluding misspellings of "visit" that are unrelated (e.g., _cavity_ and _activist_); notice the word boundary anchors, `\\b`. ("Tour" is not misspelled commonly.)
+
+###### Claude (or Another AI Assistant)
+
+Extract `id` and `notes` data from `filtered8v.json`: (`id` is a student's attendance ID, which is unique, so do not use `person_id` which repeats)
+
+```bash
+jq '[.[] | {id, notes}]' filtered8v.json > sanitized.json
+```
+
+Prompt Claude (or another AI assistant) to extract `id` and `notes` data from `sanitized.json` of any students who are likely visiting schools, touring schools, or shadow visiting: (you can look at `id` is a student's ID for a particular day)
 
 ```bash
 claude --model sonnet --permission-mode auto \
-"From sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > filtered_ai.json
+"From sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > filtered8v_ai.json
 ```
-> Haiku model is too aggressive at excluding data, and Sonnet model may miss data on the first pass. In fact, extracting `id` and `notes` data for the prompt, not only saves AI tokens and — thus — lowers the chance of hitting rate limits, but also mitigates the risk of AI excluding data. (We also saved AI tokens by not relying on Claude \[or another AI assistant\] to filter for "shadow," "visit," "tour," and common misspellings, since we did not need to rely on it.) Auto permission mode allows Claude to make its own decisions based on its internal safety model. Requesting Claude to make a triple check produced identical content.
 
-Wait for a moment! For me, it took about 3-4 minutes to complete ~~on a MacBook Air M1~~ LOCAL HARDWARE IS IRRELEVANT
+Wait for a moment! For a full school year's worth of data, Claude responded in about 3-4 minutes ~~on a MacBook Air M1~~ LOCAL HARDWARE IS IRRELEVANT, SPEED RELIES ON ANTHROPIC SERVERS
+
+Haiku model is too aggressive at excluding data, and the Sonnet model may miss data on the first pass. In fact, extracting `id` and `notes` data for the prompt, not only saves AI tokens and — thus — lowers the chance of hitting rate limits, but also mitigates the risk of AI excluding data. (We also saved AI tokens by not relying on Claude \[or another AI assistant\] to filter for "shadow," "visit," "tour," and common misspellings, since we did not need to rely on it.) Auto permission mode allows Claude to make its own decisions based on its internal safety model. (Requesting Claude to make a triple check produced identical content.)
 
 Sometimes, Claude may format the JSON array incorrectly, even if you additionally prompt it to start the array with `[` and end it with `]`, and even if you additionally prompt it: `"...No preamble, no explanation, no markdown, no code fences."` So, I would run an extra command to ensure that the array is formatted correctly:
 
 ```bash
-sed -n '/^\[/,/^\]$/p' temp/filtered_ai.json > temp/filtered_clean.json && \
-mv temp/filtered_clean.json temp/filtered_ai.json
+sed -n '/^\[/,/^\]$/p' filtered8v_ai.json > filtered8v_ai_clean.json && \
+mv filtered8v_ai_clean.json filtered8v_ai.json
 ```
 
-Afterward, trim `filtered.json`:
+##### Generate Output
+
+Keep data in `filtered8v.json` for `id` in `filtered8v_ai.json`
 
 ```bash
-jq --slurpfile lookup filtered_ai.json '
+jq --slurpfile lookup filtered8v_ai.json '
   ($lookup[0] | map(.id)) as $ids |
   [.[] | select(.id | IN($ids[]))]
-' filtered.json > output.json
+' filtered8v.json > output.json
 ```
+
+Entries in `output.json` will be more refined than entries in the Veracross UI; however, again the API returns entries in JSON format, along with additional fields (e.g., `id` which we used to sanitize the data).
 
 ##### Optimize API Query More
 
