@@ -37,7 +37,7 @@ sleep 0.5; \
 curl --silent --get "https://api.veracross.com/$school_route/v3/master_attendance" \
   --header "Authorization: Bearer $access_token" \
   --header "X-Page-Size: 1000" \
-  --data-urlencode "attendance_date=$date" > temp/$1.json
+  --data-urlencode "attendance_date=$date" > temp/$1-attendance.json
 EOF && \
 
 chmod +x fetch_attendance.sh
@@ -55,7 +55,12 @@ end="2026-06-11" && \
 today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) && \
 end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) && \
 
-seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
+seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
+
+curl --silent --get "https://api.veracross.com/$school_route/v3/directory/student" \
+  --header "Authorization: Bearer $access_token" \
+  --header "X-Page-Size: 1000" \
+  --data-urlencode "grade_level=8" > temp/grade8.json
 ```
 
 ### Step 4B: Filter the Student Records
@@ -63,7 +68,11 @@ seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 Use regular expressions, and focus on records that have changed:
 
 ```bash
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' temp/*.json > temp/filtered.json && \
+jq --slurp --slurpfile names temp/grade8.json '
+  ($names[0].data | map(.student_id) | map(tostring)) as $ids |
+  [.[].data // [] | .[] | select(.person_id | tostring | IN($ids[]))] |
+  sort_by(.attendance_date, .person)
+' temp/*-attendance.json > temp/filtered8.json && \
 
 if [ -f output.json ]; then
   jq 'map({key: (.id | tostring), value: .notes}) | from_entries' output.json > temp/reference.json && \
@@ -72,8 +81,10 @@ if [ -f output.json ]; then
   [.[] | . as $record | select($old[0][$record.id | tostring] != null and $old[0][$record.id | tostring] != $record.notes)]
 ' temp/filtered.json > temp/changed.json
 else
-  cp temp/filtered.json temp/changed.json
-fi
+  cp temp/filtered8.json temp/changed.json
+fi && \
+
+jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' temp/changed.json > temp/filtered8v.json
 ```
 
 ### Step 4C: Filter with Claude (or Another AI Assistant)
@@ -162,9 +173,9 @@ To obtain the client ID and secret, a user with a OAuth_App_Admin supplemental s
 
 #### Enable Scopes
 
-Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, and Early Dismissal Time data are located at endpoint `master_attendance`. PERSON: Current Grade data is located at endpoint `directory/student`.
+Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, and Early Dismissal Time records data are located at endpoint `master_attendance`. PERSON: Current Grade data is located at endpoint `directory/student`.
 
-In your newly created OAuth application, enable two scopes: `master_attendance:list` and `directory.student:list`. We will use the scopes to gain access the endpoints next.
+In your newly created OAuth application, enable two scopes: `master_attendance:list` and `directory.student:list`. We will request the scopes with an access token next, so we can access the endpoints.
 
 #### Retrieve Access Token
 
@@ -182,6 +193,10 @@ Replace `{subdirectory}`, `{your_client_id}`, and `{your_client_secret}` with th
 
 #### Set Up Query
 
+##### Retrieve All Attendance Records
+
+Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, Early Dismissal Time, etc.
+
 ```bash
 seq 0 289 | xargs --max-procs=2 -I N bash -c '
   date=$(date -j -v+Nd -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
@@ -189,10 +204,37 @@ seq 0 289 | xargs --max-procs=2 -I N bash -c '
   curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
     --header "Authorization: Bearer {your_access_token}" \
     --header "X-Page-Size: 1000" \
-    --data-urlencode "attendance_date=$date" > N.json
+    --data-urlencode "attendance_date=$date" > N-attendance.json
 '
+```
 
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > filtered.json
+##### Retrieve Grade 8 Student Records
+
+PERSON: Current Grade et al.
+
+```bash
+curl --silent --get "https://api.veracross.com/{subdirectory}/v3/directory/student" \
+  --header "Authorization: Bearer {your_access_token}" \
+  --header "X-Page-Size: 1000" \
+  --data-urlencode "grade_level=8" > grade8.json
+```
+
+##### Process Data Locally
+
+Filter attendance records for students in grade 8.
+
+```bash
+jq --slurp --slurpfile names grade8.json '
+  ($names[0].data | map(.student_id) | map(tostring)) as $ids |
+  [.[].data // [] | .[] | select(.person_id | tostring | IN($ids[]))] |
+  sort_by(.attendance_date, .person)
+' *-attendance.json > filtered8.json
+```
+
+Filter for notes containing "shadow," or "visit," or "tour."
+
+```bash
+jq --slurp '[.[] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))]' filtered8.json > filtered8v.json
 ```
 
 Why this API query is similar to, but not equivalent to, the SQL Query is that this query cycles 290 times (0, 1, 2, ..., 289) instead of filtering by date.
