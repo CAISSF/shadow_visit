@@ -191,26 +191,36 @@ export access_token=$(curl --silent --request POST https://accounts.veracross.co
 
 Replace `{subdirectory}`, `{your_client_id}`, and `{your_client_secret}` with the credential values you retrieved earlier. The command will retrieve an access token and store is value in variable: `access_token`. Used tokens expire in 1 hour, so _re-run this command after each token expires_.
 
-#### Set Up Query
+#### Run Query
 
 ##### Retrieve All Attendance Records
 
 Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, Early Dismissal Time, etc.
 
+Create a shell script, for example `fetch_attendance.sh`:
+
 ```bash
-seq 0 283 | xargs --max-procs=2 -I N bash -c '
-  date=$(date -j -v+Nd -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
-  sleep 0.5; \
-  curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
-    --header "Authorization: Bearer {your_access_token}" \
-    --header "X-Page-Size: 1000" \
-    --data-urlencode "attendance_date=$date" > N-attendance.json
-'
+date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
+sleep 0.5; \
+curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
+  --header "Authorization: Bearer {your_access_token}" \
+  --header "X-Page-Size: 1000" \
+  --data-urlencode "attendance_date=$date" > $1-attendance.json
+```
+
+Make the script executable: `chmod +x fetch_attendance.sh`<br>
+Alternatively: `chmod 755 fetch_attendance.sh` (same result)
+
+Then, run the script with this command:
+```bash
+seq 0 283 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 ```
 
 The bash command will run 284 times (0, 1, 2, 3, ..., 283), in order to generate attendance records for Sep 1, Sep 2, Sep 3, ..., Jun 10/11 (`0-attendance.json`, `1-attendance.json`, `2-attendance.json`, `3-attendance.json`, ..., `283-attendance.json`). These attendance records are of _all_ students, not just of eighth grade students.
 
 The command will also run at most two cycles at a time (`--max-procs=2`) with a half-second pause between each cycle (`sleep 0.5`), together to speed up processing and not trigger rate limits. (Rate limit is 300 requests every 3 minutes, meaning the speed limit is ~1.67 requests per second; 284 requests < 300, and our speed ~0.8–2 requests per second per my discussion with Claude. A greater number of parallel processes, less sleep, splitting up parallel processes, and/or clever workarounds could work to accelerate requests, but you risk hitting the rate limit or violating terms of service.)
+
+`xargs` commands must be short, otherwise the terminal emulator will complain: `xargs: command line cannot be assembled, too long`. This is why we created the script file, instead of placing the script contents in the `xargs` command.
 
 ##### Retrieve Grade 8 Student Records
 
@@ -248,29 +258,14 @@ Entries in `filtered8v.json` will be identical to entries in the Veracross UI, a
 
 We will make the entries more readable and tidy up the fields, later. For now, it is important to achieve more granularity so that all remaining entries are school visits/tours.
 
-#### Run API Query (macOS)
 
-You will need to modify the query above (see "Similar API Query"), first, otherwise the terminal emulator will complain: `xargs: command line cannot be assembled, too long`
 
-Place the query's bash command in a shell script, for example...<br>
-`fetch_attendance.sh`:
-```bash
-date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
-sleep 0.5; \
-curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
-  --header "Authorization: Bearer {your_access_token}" \
-  --header "X-Page-Size: 1000" \
-  --data-urlencode "attendance_date=$date" > $1.json
-```
 
-Make the script executable: `chmod +x fetch_attendance.sh`<br>
-Alternatively: `chmod 755 fetch_attendance.sh` (same result)
 
-Then, run the query using the script:<br>
-```bash
-seq 0 289 | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 
-jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > filtered.json
+
+
+jq --slurp '[.[].data // [] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))] | sort_by(.attendance_date, .person)' *.json > filtered8.json
 ```
 Be patient! You will retrieve a JSON response in a moment, and you can review it in the `output.json` file. (You can also output the response directly in the terminal emulator, however JSON responses can be exceptionally long.)
 
