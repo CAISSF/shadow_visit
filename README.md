@@ -25,7 +25,7 @@ export access_token=$(curl --silent --request POST https://accounts.veracross.co
   --data "grant_type=client_credentials" \
   --data "client_id=$client_id" \
   --data "client_secret=$client_secret" \
-  --data "scope=master_attendance:list" | jq --raw-output '.access_token')
+  --data "scope=master_attendance:list directory.student:list" | jq --raw-output '.access_token')
 ```
 
 ### Step 3: Create a Script
@@ -145,10 +145,42 @@ Unfortunately, in the UI there is no other way to filter entries more. Many rema
 
 ### Running Query Using Veracross API (macOS)
 
-Veracross UI does not permit using an SQL-like query. So, we will need to use its API and process data locally.
+Veracross UI does not permit using an SQL-like query. So, we will need to use its API and process data locally. The API requires three credentials: `school_route`, `client_id`, and `client_secret`
 
-Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, and Early Dismissal Time data are located at endpoint `master_attendance`. PERSON: Current Grade data is located at endpoint `directory/student`. So, we will also need access to these endpoints.
+#### Retrieve Credentials
 
+School route:<br>
+`school_route={subdirectory}`
+
+Example: "cais" (sans quotes) in https://axiom.veracross.com/cais/
+
+Client ID and Secret:<br>
+`client_id={your_client_id}`<br>
+`client_secret={your_client_secret}`
+
+To obtain the client ID and secret, a user with a OAuth_App_Admin supplemental security role must create an internal integration in Identity & Access Management
+
+#### Enable Scopes
+
+Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, and Early Dismissal Time data are located at endpoint `master_attendance`. PERSON: Current Grade data is located at endpoint `directory/student`.
+
+In your newly created OAuth application, enable two scopes: `master_attendance:list` and `directory.student:list`. We will use the scopes to gain access the endpoints next.
+
+#### Retrieve Access Token
+
+In a terminal emulator (e.g., macOS Terminal), run the command:
+
+```bash
+export access_token=$(curl --silent --request POST https://accounts.veracross.com/{subdirectory}/oauth/token \
+  --data "grant_type=client_credentials" \
+  --data "client_id={your_client_id}" \
+  --data "client_secret={your_client_secret}" \
+  --data "scope=master_attendance:list directory.student:list" | jq --raw-output '.access_token')
+```
+
+Replace `{subdirectory}`, `{your_client_id}`, and `{your_client_secret}` with the credential values you retrieved earlier. The command will retrieve an access token and store is value in variable: `access_token`. Used tokens expire in 1 hour, so _re-run this command after each token expires_.
+
+#### Set Up Query
 
 ```bash
 seq 0 289 | xargs --max-procs=2 -I N bash -c '
