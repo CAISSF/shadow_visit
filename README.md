@@ -223,7 +223,7 @@ Remember: These attendance records are of _all_ students, not just of eighth gra
 
 The bash command will run 284 times (0, 1, 2, 3, ..., 283), in order to generate attendance records for Sep 1, Sep 2, Sep 3, ..., Jun 10/11 (`0-attendance.json`, `1-attendance.json`, `2-attendance.json`, `3-attendance.json`, ..., `283-attendance.json`). `xargs` passes the value of `N` (0, 1, 2, 3, ..., 283) into the script as argument `$1`. (More specifically, the second `N` after `fetch_attendance.sh` is what changes value and is what is passed into the script. The first `N` after `-I` defines the placeholder name, so just make sure to match the placeholders. Any additional arguments in the script must be `$2`, `$3`, `$4`, etc.) 
 
-The command will also run at most two cycles at a time (`--max-procs=2`) with a half-second pause between each cycle (`sleep 0.5`), together to speed up processing and not trigger rate limits. (Rate limit is 300 requests every 3 minutes, meaning the speed limit is ~1.67 requests per second; 284 requests < 300, and our speed ~0.8–2 requests per second per my discussion with Claude. A greater number of parallel processes, less sleep, splitting up parallel processes, and/or clever workarounds could work to accelerate requests, but you risk hitting the rate limit or violating terms of service.)
+The command will also run at most two cycles at a time (`--max-procs=2`) with a half-second pause between each cycle (`sleep 0.5`) to speed up processing and not trigger rate limits. (Rate limit is 300 requests every 3 minutes, meaning the speed limit is ~1.67 requests per second; 284 requests < 300, and our speed ~0.8–2 requests per second per my discussion with Claude. A greater number of parallel processes, less sleep, splitting up parallel processes, and/or clever workarounds could work to accelerate requests, but you risk hitting the rate limit or violating terms of service.)
 
 `xargs` commands must be short, otherwise the terminal emulator will complain: `xargs: command line cannot be assembled, too long`. This is why we created the script file, instead of placing the script contents in the `xargs` command.
 
@@ -291,7 +291,7 @@ claude --model sonnet --permission-mode auto \
 
 Wait for a moment! For a full school year's worth of data, Claude responded in about 3-4 minutes ~~on a MacBook Air M1~~ LOCAL HARDWARE IS IRRELEVANT, SPEED RELIES ON ANTHROPIC SERVERS
 
-Haiku model is too aggressive at excluding data, and the Sonnet model may miss data on the first pass. In fact, extracting `id` and `notes` data for the prompt, not only saves AI tokens and — thus — lowers the chance of hitting rate limits, but also mitigates the risk of AI excluding data. (We also saved AI tokens by not relying on Claude \[or another AI assistant\] to filter for "shadow," "visit," "tour," and common misspellings, since we did not need to rely on it.) Auto permission mode allows Claude to make its own decisions based on its internal safety model. (Requesting Claude to make a triple check produced identical content.)
+Haiku model is too aggressive at excluding data, and the Sonnet model may miss data on the first pass. In fact, extracting `id` and `notes` data for the prompt, not only saves AI tokens and — thus — accelerates response times and lowers the chance of hitting rate limits, but also mitigates the risk of AI excluding data. (We also saved AI tokens by not relying on Claude \[or another AI assistant\] to filter for "shadow," "visit," "tour," and common misspellings, since we did not need to rely on it.) Auto permission mode allows Claude to make its own decisions based on its internal safety model. (Requesting Claude to make a triple check produced identical content.)
 
 Sometimes, Claude may format the JSON array incorrectly, even if you additionally prompt it to start the array with `[` and end it with `]`, and even if you additionally prompt it: `"...No preamble, no explanation, no markdown, no code fences."` So, I would run an extra command to ensure that the array is formatted correctly:
 
@@ -313,21 +313,23 @@ jq --slurpfile lookup filtered8v_ai.json '
 
 Entries in `output.json` will be more refined than entries in the Veracross UI; however, again the API returns entries in JSON format, along with additional fields (e.g., `id` which we used to sanitize the data).
 
-##### Optimize API Query More
+#### Optimize API Query More
 
-###### Confine Date Range
+Utilizing parallel processing, half-second pauses, data sanitization, the proper AI model, and only the AI model when you need it all helped optimize commands above. We can optimize the commands even more. 
 
-Since only data for current and upcoming visits, tours, and shadow visits are useful, we can confine the date range more.
+##### Alternative Method to Speed Up Processing Attendance
+
+Since only data records for current and upcoming visits, tours, and shadow visits are useful, we can confine the date range more.
 
 ```bash
 start="2025-09-01" # default
 today=$(date +%Y-%m-%d)
 end="2026-06-11" # default
 
-today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 ))
-end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 ))
+today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) # converts today's date to number of days since start date
+end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) # converts end date to number of days since start date
 
-seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
+seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N # replace "0" and "283"
 ```
 
 ###### Only Utilize Claude (or Another AI Assistant) to Filter Modified Notes
