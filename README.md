@@ -143,30 +143,12 @@ You can hide the PERSON: Current Grade field
 
 Unfortunately, in the UI there is no other way to filter entries more. Many remaining entries are not school visits/tours (e.g., student visits family, participates in a tournament, or accompanies a sibling to their high school visit, tour, or shadow visit rather than doing their own school search). We need more granularity!
 
-### Equivalent SQL Query
+### Running Query Using Veracross API (macOS)
 
-Veracross UI does not permit an SQL-like query. However, if it had, then the query would look like:
+Veracross UI does not permit using an SQL-like query. So, we will need to use its API and process data locally.
 
-```sql
-SELECT
-  attendance_date,
-  person,
-  attendance_category,
-  late_arrival_time,
-  early_dismissal_time,
-  notes
-FROM master_attendance
-WHERE attendance_date >= DATE '2025-09-01'
-  AND (
-    notes ILIKE '%shadow%'
-    OR notes ILIKE '%visit%'
-    OR notes ILIKE '%tour%'
-  )
-ORDER BY attendance_date, person;
-```
-An SQL-like query like this would produce a data grid already. (Again, I would also include common misspellings, but exclude results where a student accompanies a sibling.)
+Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, and Early Dismissal Time data are located at endpoint `master_attendance`. PERSON: Current Grade data is located at endpoint `directory/student`. So, we will also need access to these endpoints.
 
-### Similar API Query (macOS)
 
 ```bash
 seq 0 289 | xargs --max-procs=2 -I N bash -c '
