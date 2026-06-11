@@ -101,9 +101,14 @@ claude --model sonnet --permission-mode auto \
 
 sed -n '/^\[/,/^\]$/p' temp/filtered8v_ai.json > temp/filtered8v_ai_clean.json && \
 mv temp/filtered8v_ai_clean.json temp/filtered8v_ai.json
+
+jq --slurpfile lookup filtered8v_ai.json '
+  ($lookup[0] | map(.id)) as $ids |
+  [.[] | select(.id | IN($ids[]))]
+' filtered8v.json > output_changed.json
 ```
 
-### Step 4D: Output or Update Results
+### Step 4D: Output or Update Results, and Track Sign-Ups
 
 ```bash
 if [ -f output.json ]; then
@@ -445,7 +450,43 @@ No student records that reference visiting grandparents, family, or siblings. No
 5. If any notes in `output.json` contain Windows carriage returns with escape sequences, `\r\n`, or UNIX escape sequences, `\n`, keep them; this way, if you update notes in the Veracross UI via the API, then its UI will display the field correctly.
 > The command to retrieve the access token exports `access_token` environment variable and its value for you. So, do not export `access_token` and its value manually or place in `.env`
 
-## Format JSON Response like Veracross UI Response
+
+## Tracking Sign-Ups
+
+Every 8th grade student who is either visiting or touring a high school or is shadowing a high school student has signed up to do so. So, let us add the list of students we have filtered to a sign up "sheet" named `signups.json`, unless it already exists in which case simply update it.
+
+```bash
+if [ -f signups.json ]; then
+  jq --slurpfile new output_changed.json '
+    ($new[0] | map(.id)) as $new_ids |
+    [.[] | select(.id | IN($new_ids[]) | not)] + $new[0] |
+    unique_by(.id)
+  ' signups.json > signups_merged.json && \
+  mv signups_merged.json signups.json
+else
+  cp output_changed.json signups.json
+fi
+```
+
+Everyone who is neither visiting, nor touring, nor shadowing has not signed up. `output.json` does not currently display data records for these students, so we will need to relax the output.
+
+Again, if `output.json` exists, update its records. It it does not exist, essentially all its records are new. However, change the reference file from `output_changed.json` to `changed.json`. Recall that `change.json` contains all changed entries before filtering them with the regular expression and the AI assistant.
+
+```bash
+if [ -f output.json ]; then
+  jq --slurpfile changed changed.json '
+  ($changed[0] | map({key: (.id | tostring), value: .}) | from_entries) as $changes |
+  [.[] | if $changes[.id | tostring] then $changes[.id | tostring] else . end]
+' output.json > output_updated.json && \
+  mv output_updated.json output.json
+else
+  cp changed.json output.json
+fi
+```
+
+Also changed in the command is we stripped out codes that would add any missing entries, since `output.json` will now include all students.
+
+## Format JSON Response like Veracross UI Response with Sign-Up Tracking
 
 Now, let us make the entries more readable and tidy up the fields. We will track sign-ups, afterward.
 
@@ -492,41 +533,6 @@ Open `output.md`
 `jq` is a command-line tool for parsing, filtering, and transforming JSON, and `@tsv` is a jq formatter. `jq` extracts arrays from `output.json`, and `@tsv` converts them into tab separated strings.
 
 `sed` is a command-line tool that reads text line by line and applies additional transformations; its basic syntax is `sed 's/find/replace/g'`. `^` means start of line; `\t` means tab character; `$` means end of line; and `g` means global.
-
-## Tracking Sign-Ups
-
-Every 8th grade student who is either visiting or touring a high school or is shadowing a high school student has signed up to do so. So, let us add the list of students we have filtered to a sign up "sheet" named `signups.json`, unless it already exists in which case simply update it.
-
-```bash
-if [ -f signups.json ]; then
-  jq --slurpfile new output_changed.json '
-    ($new[0] | map(.id)) as $new_ids |
-    [.[] | select(.id | IN($new_ids[]) | not)] + $new[0] |
-    unique_by(.id)
-  ' signups.json > signups_merged.json && \
-  mv signups_merged.json signups.json
-else
-  cp output_changed.json signups.json
-fi
-```
-
-Everyone who is neither visiting, nor touring, nor shadowing has not signed up. `output.json` does not currently display data records for these students, so we will need to relax the output.
-
-Again, if `output.json` exists, update its records. It it does not exist, essentially all its records are new. However, change the reference file from `output_changed.json` to `changed.json`. Recall that `change.json` contains all changed entries before filtering them with the regular expression and the AI assistant.
-
-```bash
-if [ -f output.json ]; then
-  jq --slurpfile changed changed.json '
-  ($changed[0] | map({key: (.id | tostring), value: .}) | from_entries) as $changes |
-  [.[] | if $changes[.id | tostring] then $changes[.id | tostring] else . end]
-' output.json > output_updated.json && \
-  mv output_updated.json output.json
-else
-  cp changed.json output.json
-fi
-```
-
-Also changed in the command is we stripped out codes that would add any missing entries, since `output.json` will now include all students.
 
 # Note
 
