@@ -425,20 +425,20 @@ No student records that reference visiting grandparents, family, or siblings. No
 
 ##### Suggestions
 
-1. In each command and query, replace:<p>
+1. In each command, replace:<p>
 `{subdirectory}` &rarr; `$school_route`<br>
 `{your_client_id}` &rarr; `$client_id`<br>
 `{your_client_secret}` &rarr; `$client_secret`<br>
 `{your_access_token}` &rarr; `$access_token`
-2. Either export the environment variables: `school_route`, `client_id` and `client_secret` with their values OR<p>
-(And this what I do) Place the environment variables and their values in a `.env` file, and export them by running: `export $(grep --invert-match '^#' .env | xargs)`
+2. Either manually export the environment variables: `school_route`, `client_id` and `client_secret` with their values OR<p>
+(And this is what I do) Place the environment variables and their values in a `.env` file, and export them by running: `export $(grep --invert-match '^#' .env | xargs)`
 3. _Then_ run the command to retrieve the access token, and then run the API query.
-4. Better yet, create a temporary folder: `mkdir temp/`, generate the multiple JSON files in there: `$1.json` &rarr; `temp/$1.json` and `*.json` &rarr; `temp/*.json` respectively, and once you complete your query clean up the temporary JSON files with `rm -rf temp/`
-5. If any notes in `output.json` contain Windows carriage returns with escape sequences, `\r\n`, or UNIX escape sequences, `\n`, keep them; this way, if you POST the notes to Veracross then its UI will display the field correctly.
+4. Better yet, create a temporary folder: `mkdir -p temp/`, generate the multiple JSON files in there: `$1-attendance.json` &rarr; `temp/$1-attendance.json` (and, thus, `*.json` &rarr; `temp/*.json`), and once you complete your query clean up the temporary JSON files with `rm -rf temp/`
+5. If any notes in `output.json` contain Windows carriage returns with escape sequences, `\r\n`, or UNIX escape sequences, `\n`, keep them; this way, if you update notes in the Veracross UI via the API, then its UI will display the field correctly.
+> The command to retrieve the access token exports `access_token` environment variable and its value for you. So, do not export `access_token` and its value manually or place in `.env`
 
-> The command to retrieve the access token exports `access_token` and its value for you, so do not export it manually or place it in `.env`. Let it be.
+## Format JSON Response like Veracross UI Response
 
-## Format JSON Response like Veracross UI Response (Optional)
 
 Run the command:
 
