@@ -101,11 +101,6 @@ claude --model sonnet --permission-mode auto \
 
 sed -n '/^\[/,/^\]$/p' temp/filtered8v_ai.json > temp/filtered8v_ai_clean.json && \
 mv temp/filtered8v_ai_clean.json temp/filtered8v_ai.json
-
-jq --slurpfile lookup filtered8v_ai.json '
-  ($lookup[0] | map(.id)) as $ids |
-  [.[] | select(.id | IN($ids[]))]
-' filtered8v.json > output_changed.json
 ```
 
 ### Step 4D: Output or Update Results, and Track Sign-Ups
@@ -298,7 +293,7 @@ Extract `id` and `notes` data from `filtered8v.json`: (`id` is a student's atten
 jq --slurp '[.[] | {id, notes}]' filtered8v.json > sanitized.json
 ```
 
-Prompt Claude (or another AI assistant) to extract `id` and `notes` data from `sanitized.json` of any students who are likely visiting schools, touring schools, or shadow visiting: (you can look at `id` is a student's ID for a particular day)
+Prompt Claude (or another AI assistant) to extract `id` and `notes` data from `sanitized.json` of any students who are likely visiting schools, touring schools, or shadow visiting: (you can look at `id` as a student's ID for a particular day)
 
 ```bash
 claude --model sonnet --permission-mode auto \
@@ -397,45 +392,6 @@ else
 fi
 ```
 
-##### Data Workflow and Result
-
-Now that we have addressed how to run, and optimize, our query using the Veracross API, so that we can achieve more refined data record entries, let us summarize the workflow.
-
-Essentially, we retrieve student records dated Sep 1 to mid-Jun, and then we filter them: first by grade, second with a regular expression, and third with an AI assistant. We focus on data records that have changed.
-
-```bash
-      curl: *-attendance.json
-         curl: grade8.json
-                 |
-    {person_id=student_id only}
-                 |
-                 v
-           filtered8.json
-                 |
-             [changed]
-                 |
-[sha[dw]+ow|visit|\\bv[is]+t\\b|tour]
-                 |
-                 v
-          filtered8v.json
-                 |
-                 |--- {id,notes} ---> sanitized.json
-                 |                          |
-                 |                    [AI assistant]
-               {all}                        |
-                 |                          v
-                 |                  filtered8v_ai.json
-                 |                          |
-                 +----> {id match/new} <----+
-                              |
-                              v
-                         output.json
-```
-
-What remains is student records that reference visiting, touring, or shadow visiting a high school for admissions.
-
-No student records that reference visiting grandparents, family, or siblings. No records referencing doctor, dentist, wellness, or emergency room visits. No sports tournaments (e.g., fencing, golf, soccer, and volleyball). No passport appointments. No records in which a student accompanies a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. No shadow visits to another K-8 school, and no traveling abroad.
-
 ##### Suggestions
 
 1. In each command, replace:<p>
@@ -450,21 +406,21 @@ No student records that reference visiting grandparents, family, or siblings. No
 5. If any notes in `output.json` contain Windows carriage returns with escape sequences, `\r\n`, or UNIX escape sequences, `\n`, keep them; this way, if you update notes in the Veracross UI via the API, then its UI will display the field correctly.
 > The command to retrieve the access token exports `access_token` environment variable and its value for you. So, do not export `access_token` and its value manually or place in `.env`
 
-
 ## Tracking Sign-Ups
 
-Every 8th grade student who is either visiting or touring a high school or is shadowing a high school student has signed up to do so. So, let us add the list of students we have filtered to a sign up "sheet" named `signups.json`, unless it already exists in which case simply update it.
+Every 8th grade student who is either visiting or touring a high school or is shadowing a high school student has signed up to do so on certain days. So, let us add the `id` of students we have filtered to a sign up "sheet" named `signups.json`, unless it already exists in which case simply update it. (Again, `id` is a student's attendance ID, but you can look at it as a student's ID for a particular day.)
+
 
 ```bash
 if [ -f signups.json ]; then
-  jq --slurpfile new output_changed.json '
+  jq --slurpfile new filtered8v_ai.json '
     ($new[0] | map(.id)) as $new_ids |
     [.[] | select(.id | IN($new_ids[]) | not)] + $new[0] |
     unique_by(.id)
   ' signups.json > signups_merged.json && \
   mv signups_merged.json signups.json
 else
-  cp output_changed.json signups.json
+  cp filtered8v_ai.json signups.json
 fi
 ```
 
@@ -484,18 +440,61 @@ else
 fi
 ```
 
-Also changed in the command is we stripped out codes that would add any missing entries, since `output.json` will now include all students.
+Also changed in the command is we stripped out codes that would add any missing entries, since `output.json` will now include all students. In effect, we can also strip out one block of code earlier that generated `output_changed.json`.
+
+##### Data Workflow and Result
+
+Now that we have addressed how to run, and optimize, our query using the Veracross API, so that we can achieve more refined data record entries, let us summarize the workflow.
+
+Essentially, we retrieve student records dated Sep 1 to mid-Jun, and then we filter them: first by grade, second with a regular expression, and third with an AI assistant. We focus on data records that have changed.
+
+```bash
+  curl: *-attendance.json
+     curl: grade8.json
+             |
+{person_id=student_id only}
+             |
+             v
+       filtered8.json
+             |
+         [changed]
+             |
+             |-- [sha[dw]+ow|visit|\\bv[is]+t\\b|tour]
+             |                     |
+             |                     v
+             |              filtered8v.json
+             |                     |
+             |              {id,notes only}
+             |                     |
+           {all}                   v
+             |               sanitized.json
+             |                     |
+             |               [AI assistant]
+             |                     |
+             |                     v
+             |             filtered8v_ai.json
+             |                     |
+             v                     v
+        output.json           signups.json
+```
+
+What remains is student records that reference visiting, touring, or shadow visiting a high school for admissions.
+
+No student records that reference visiting grandparents, family, or siblings. No records referencing doctor, dentist, wellness, or emergency room visits. No sports tournaments (e.g., fencing, golf, soccer, and volleyball). No passport appointments. No records in which a student accompanies a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. No shadow visits to another K-8 school, and no traveling abroad.
 
 ## Format JSON Response like Veracross UI Response with Sign-Up Tracking
 
-Now, let us make the entries more readable and tidy up the fields. We will track sign-ups, afterward.
+Now, let us make the entries more readable and tidy up the fields.
 
-We will extract Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, and Early Dismissal Time data records from `output.json`, and then export the data into a markdown file.
+We will extract Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, and Early Dismissal Time data records from `output.json`, check if `id` in `signups.json` exist in `output.json`, and then export the data and finding into a markdown file. 
 
-Run the command:
+If students sign-up, the command will place an "x" next to their name, for each day that they are visiting, touring, or shadow visiting. The command below also formats the attendance date, attendance category, and late arrival time and early dismissal time as the dates, categories and times are formatted in the UI.
+
+Run the entire command:
 
 ```bash
-jq --raw-output '
+jq --raw-output --slurpfile signups signups.json '
+  ($signups[0] | map(.id) | map(tostring)) as $signup_ids |
   def format_date: 
     if . == null then ""
     else split("-") | .[1] + "/" + .[2] + "/" + (.[0][2:]) end;
@@ -519,9 +518,9 @@ jq --raw-output '
       end
     end;
 
-  ["date","person","notes","attendance_category","late_arrival_time","early_dismissal_time"],
-  ["----","------","-----","-------------------","----------------","--------------------"],
-  (.[] | [(.attendance_date | format_date), .person, (.notes | gsub("\r\n"; "<br>") | gsub("\n"; "<br>")), (.attendance_category | format_category), (.late_arrival_time | format_time), (.early_dismissal_time | format_time)])
+  ["date","person","signed_up","notes","attendance_category","late_arrival_time","early_dismissal_time"],
+  ["----","------","---------","-----","-------------------","----------------","--------------------"],
+  (.[] | [(.attendance_date // "" | format_date), (.person // ""), (if (.id | tostring) | IN($signup_ids[]) then "x" else "" end), (.notes // "" | gsub("\r\n"; "<br>") | gsub("\n"; "<br>")), (.attendance_category | format_category), (.late_arrival_time | format_time), (.early_dismissal_time | format_time)])
   | @tsv' output.json \
   | sed 's/^/|/' \
   | sed 's/\t/|/g' \
