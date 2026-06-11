@@ -68,29 +68,31 @@ curl --silent --get "https://api.veracross.com/$school_route/v3/directory/studen
 Use regular expressions, and focus on records that have changed:
 
 ```bash
-jq --slurp --slurpfile names temp/grade8.json '
+jq --slurpfile names temp/grade8.json '
   ($names[0].data | map(.student_id) | map(tostring)) as $ids |
   [.[].data // [] | .[] | select(.person_id | tostring | IN($ids[]))] |
   sort_by(.attendance_date, .person)
 ' temp/*-attendance.json > temp/filtered8.json && \
 
 if [ -f output.json ]; then
-  jq 'map({key: (.id | tostring), value: .notes}) | from_entries' output.json > temp/reference.json && \
-
-  jq --slurpfile old temp/reference.json '
-  [.[] | . as $record | select($old[0][$record.id | tostring] != null and $old[0][$record.id | tostring] != $record.notes)]
-' temp/filtered.json > temp/changed.json
+  jq --slurpfile existing output.json '
+    ($existing[0] | map({key: (.id | tostring), value: .notes}) | from_entries) as $old_notes |
+    [.[] | . as $record | select(
+      ($old_notes[$record.id | tostring] != null or $record.notes != null) and
+      $old_notes[$record.id | tostring] != $record.notes
+    )]
+  ' temp/filtered8.json > temp/changed.json
 else
   cp temp/filtered8.json temp/changed.json
 fi && \
 
-jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' temp/changed.json > temp/filtered8v.json
+jq --slurp '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' temp/changed.json > temp/filtered8v.json
 ```
 
 ### Step 4C: Filter with Claude (or Another AI Assistant)
 
 ```bash
-jq '[.[] | {id, notes}]' temp/filtered8v.json > temp/sanitized.json && \
+jq --slurp '[.[] | {id, notes}]' temp/filtered8v.json > temp/sanitized.json && \
 
 claude --model sonnet --permission-mode auto \
 "From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > temp/filtered8v_ai.json && \
@@ -109,7 +111,6 @@ if [ -f output.json ]; then
   ($changed[0] | map({key: (.id | tostring), value: .}) | from_entries) as $changes |
   [.[] | if $changes[.id | tostring] then $changes[.id | tostring] else . end]
 ' output.json > temp/output_updated.json && \
-
   mv temp/output_updated.json output.json
 else
   jq --slurpfile lookup temp/filtered_ai.json '
@@ -125,7 +126,7 @@ The commands will store your credentials and make them available, retrieve and s
 
 Here on, you can simply re-retrieve and store your access token (Step 2) and cleanly re-run the query and output results (Steps 4A-4D). You do not need to re-set the credentials (Step 1) and re-create the script (Step 3).
 
-You can view query progress by opening the temp/ folder. See `output.json` for query results; optionally, you can make the results more readable (see "Format JSON Response like Veracross UI Response").
+You can view query progress by opening the temp/ folder. See `output.json` for query results; then, see "Format JSON Response like Veracross UI Response" to make the results more readable and to view sign-ups.
 
 ## Background
 
@@ -243,7 +244,7 @@ curl --silent --get "https://api.veracross.com/{subdirectory}/v3/directory/stude
 Filter attendance records for students in grade 8.
 
 ```bash
-jq --slurp --slurpfile names grade8.json '
+jq --slurpfile names grade8.json '
   ($names[0].data | map(.student_id) | map(tostring)) as $ids |
   [.[].data // [] | .[] | select(.person_id | tostring | IN($ids[]))] |
   sort_by(.attendance_date, .person)
@@ -255,7 +256,7 @@ You might ask: Why generate multiple temporary JSON files and then combine them 
 Next, filter for notes containing "shadow," or "visit," or "tour."
 
 ```bash
-jq --slurp '[.[] | .[] | select(.notes // "" | test("shadow|visit|tour"; "i"))]' filtered8.json > filtered8v.json
+jq --slurp '[.[] | select(.notes // "" | test("shadow|visit|tour"; "i"))]' filtered8.json > filtered8v.json
 ```
 
 Entries in `filtered8v.json` will be identical to entries in the Veracross UI, again had you run the query using the UI instead of the API; however, the API returns entries in JSON format, along with additional fields (e.g., `id` which we will use coming up, and `person_id`). (You can also output commands directly in the terminal emulator, however JSON responses can be exceptionally long.)
@@ -269,7 +270,7 @@ We will make the entries more readable and tidy up the fields, later. For now, i
 Filter for notes containing "shadow," or "visit," or "tour," _or_ any common misspellings of each.
 
 ```bash
-jq --slurp '[.[] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' filtered8.json > filtered8v.json
+jq --slurp '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' filtered8.json > filtered8v.json
 ```
 
 `sha[dw]+ow|visit|\\bv[is]+t\\b|tour` is a regular expression that will catch misspellings of "shadow" and "visit" (e.g., _shawdow_ and _vist_). The regular expression also goes a step further by excluding misspellings of "visit" that are unrelated (e.g., _cavity_ and _activist_); notice the word boundary anchors, `\\b`. ("Tour" is not misspelled commonly.)
@@ -279,7 +280,7 @@ jq --slurp '[.[] | .[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t
 Extract `id` and `notes` data from `filtered8v.json`: (`id` is a student's attendance ID, which is unique, so do not use `person_id` which repeats)
 
 ```bash
-jq '[.[] | {id, notes}]' filtered8v.json > sanitized.json
+jq --slurp '[.[] | {id, notes}]' filtered8v.json > sanitized.json
 ```
 
 Prompt Claude (or another AI assistant) to extract `id` and `notes` data from `sanitized.json` of any students who are likely visiting schools, touring schools, or shadow visiting: (you can look at `id` is a student's ID for a particular day)
@@ -332,55 +333,50 @@ end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" 
 seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N # replace "0" and "283"
 ```
 
-###### Only Utilize Claude (or Another AI Assistant) to Filter Modified Notes
+###### Only Filter Modified Notes
 
-Extract `id` and `notes` data from `output.json`:
-
-```bash
-jq 'map({key: (.id | tostring), value: .notes}) | from_entries' output.json > temp/reference.json
-```
-Only keep data where notes changed:
+Use `output.json` as a reference file. If it exists (which it would, in this case), extract data records of which notes have changed. It it does not exist, essentially all records have changed.
 
 ```bash
-jq --slurpfile old temp/reference.json '
-  [.[] | . as $record | select($old[0][$record.id | tostring] != null and $old[0][$record.id | tostring] != $record.notes)]
-' temp/filtered.json > temp/changed.json
-```
-
-Extract `id` and `notes` data from `changed.json`, instead of from `filtered.json`:
-
-```bash
-jq '[.[] | {id, notes}]' temp/changed.json > temp/sanitized.json
+if [ -f output.json ]; then
+  jq --slurpfile existing output.json '
+    ($existing[0] | map({key: (.id | tostring), value: .notes}) | from_entries) as $old_notes |
+    [.[] | . as $record | select(
+      ($old_notes[$record.id | tostring] != null or $record.notes != null) and
+      $old_notes[$record.id | tostring] != $record.notes
+    )]
+  ' filtered8.json > changed.json
+else
+  cp filtered8.json changed.json
+fi
 ```
 
-Prompt Claude (or another AI assistant), then update `output.json`: (could also have split up commands like above)
+Filter changed data with the regular expression and Claude (or another AI assistant).
 
 ```bash
-jq --slurpfile changed temp/changed.json '
+jq --slurp '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' changed.json > filtered8v.json # changed filtered8.json to changed.json, but keep the sanitize command, Claude prompt, and clean command as they are
+```
+
+(If you choose another AI assistant, though, do not choose the assistant if it is just because the assistant is faster. Test its responses against what you would receive using my Claude Sonnet prompt. Not that, say, ChatGPT or Gemini would not work, but I did not test them.)
+
+Use `output.json`, again, as a reference file. If it exists, update its records that have changed. It it does not exist, essentially all its records are new.
+
+```bash
+if [ -f output.json ]; then
+  jq --slurpfile changed filtered8v_ai.json '
   ($changed[0] | map({key: (.id | tostring), value: .}) | from_entries) as $changes |
   [.[] | if $changes[.id | tostring] then $changes[.id | tostring] else . end]
-' output.json > temp/output_updated.json && \
-
-mv temp/output_updated.json output.json
+' output.json > output_updated.json && \
+  mv output_updated.json output.json
+else
+  jq --slurpfile lookup filtered8v_ai.json '
+    ($lookup[0] | map(.id)) as $ids |
+    [.[] | select(.id | IN($ids[]))]
+  ' filtered8v.json > output.json
+fi
 ```
 
 We would just need to check that `output.json` exists, and add `-p` option to `mkdir temp/` command in case the folder already exists.
-
-If you choose another AI assistant, do not choose the assistant if it is just because it is faster. Test its results against what you would get using my Claude Sonnet prompt. Not that, say, ChatGPT or Gemini would not work, but I did not test them.
-
-##### Empty API Responses
-
-If the JSON response is empty (i.e., `[]`), either the query found nothing or the access token has expired. To check if the access token has expired, run the command:
-
-```bash
-curl --silent --request GET \
-  --url "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
-  --header "Authorization: Bearer {your_access_token}" | jq .error
-```
-
-It will return either `"The provided access token has expired"` or, if not expired, `null`. 
-
-Again, query requests are also subject to rate limits of 300 requests every 3 minutes, also meaning a request speed limit of ~1.67 requests per second.
 
 ##### Data Workflow
 
