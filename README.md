@@ -94,10 +94,13 @@ jq --slurp '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|to
 ```bash
 jq --slurp '[.[] | {id, notes}]' temp/filtered8v.json > temp/sanitized.json && \
 
-claude --model sonnet --permission-mode auto \
-"From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > temp/filtered8v_ai.json && \
-
-"From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > temp/filtered_ai.json && \
+while true; do
+  claude --model sonnet --permission-mode auto \
+  "From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > temp/filtered8v_ai.json
+  if [ -s temp/filtered8v_ai.json ]; then
+    break
+  fi
+done && \
 
 sed -n '/^\[/,/^\]$/p' temp/filtered8v_ai.json > temp/filtered8v_ai_clean.json && \
 mv temp/filtered8v_ai_clean.json temp/filtered8v_ai.json
@@ -134,7 +137,7 @@ The commands will store your credentials and make them available, retrieve and s
 
 Here on, you can simply re-retrieve and store your access token (Step 2) and cleanly re-run the query and output results (Steps 4A-4D). You do not need to re-set the credentials (Step 1) and re-create the script (Step 3).
 
-You can view query progress by opening the temp/ folder. See `output.json` for query results; then, see "Format JSON Response like Veracross UI Response" to make the results more readable and to view sign-ups.
+You can view query progress by opening the temp/ folder. See `output.json` for query results; then, see "Format JSON Response like Veracross UI Response with Sign-Up Tracking" to make the results more readable and to view sign-ups.
 
 ## Background
 
@@ -296,15 +299,20 @@ jq --slurp '[.[] | {id, notes}]' filtered8v.json > sanitized.json
 Prompt Claude (or another AI assistant) to extract `id` and `notes` data from `sanitized.json` of any students who are likely visiting schools, touring schools, or shadow visiting: (you can look at `id` as a student's ID for a particular day)
 
 ```bash
-claude --model sonnet --permission-mode auto \
-"From sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > filtered8v_ai.json
+while true; do
+  claude --model sonnet --permission-mode auto \
+  "From sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > filtered8v_ai.json
+  if [ -s temp/filtered8v_ai.json ]; then
+    break
+  fi
+done
 ```
 
-Wait for a moment! For a full school year's worth of data, Claude responded in about 3-4 minutes ~~on a MacBook Air M1~~ LOCAL HARDWARE IS IRRELEVANT, SPEED RELIES ON ANTHROPIC SERVERS
+Wait for a moment! For a full school year's worth of data, Claude responded in about 3-4 minutes ~~on a MacBook Air M1~~ LOCAL HARDWARE IS IRRELEVANT, SPEED RELIES ON ANTHROPIC SERVERS. The command will also check if the AI assistant's response is empty because on rare occasions it is.
 
 Haiku model is too aggressive at excluding data, and the Sonnet model may miss data on the first pass. In fact, extracting `id` and `notes` data for the prompt, not only saves AI tokens and — thus — accelerates response times and lowers the chance of hitting rate limits, but also mitigates the risk of AI excluding data. (We also saved AI tokens by not relying on Claude \[or another AI assistant\] to filter for "shadow," "visit," "tour," and common misspellings, since we did not need to rely on it.) Auto permission mode allows Claude to make its own decisions based on its internal safety model. (Requesting Claude to make a triple check produced identical content.)
 
-Sometimes, Claude may format the JSON array incorrectly, even if you additionally prompt it to start the array with `[` and end it with `]`, and even if you additionally prompt it: `"...No preamble, no explanation, no markdown, no code fences."` So, I would run an extra command to ensure that the array is formatted correctly:
+Sometimes, not will Claude produce an empty response, but also Claude may format the JSON array incorrectly — even if you additionally prompt it to start the array with `[` and end it with `]`, and even if you additionally prompt it: `"...No preamble, no explanation, no markdown, no code fences."` So, I would run an extra command to ensure that the array is formatted correctly:
 
 ```bash
 sed -n '/^\[/,/^\]$/p' filtered8v_ai.json > filtered8v_ai_clean.json && \
