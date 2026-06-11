@@ -439,13 +439,17 @@ No student records that reference visiting grandparents, family, or siblings. No
 
 ## Format JSON Response like Veracross UI Response
 
+Now, let us make the entries more readable and tidy up the fields.
+
+We will extract Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, and Early Dismissal Time data records from `output.json`, and then export the data into a markdown file.
 
 Run the command:
 
 ```bash
 jq --raw-output '
   def format_date: 
-    split("-") | .[1] + "/" + .[2] + "/" + (.[0][2:]);
+    if . == null then ""
+    else split("-") | .[1] + "/" + .[2] + "/" + (.[0][2:]) end;
 
   def format_category: 
     if . == 0 then "Present"
@@ -466,9 +470,9 @@ jq --raw-output '
       end
     end;
 
-  ["date","person","attendance_category","late_arrival_time","early_dismissal_time","notes"],
-  ["----","------","-------------------","----------------","--------------------","-----"],
-  (.[] | [(.attendance_date | format_date), .person, (.attendance_category | format_category), (.late_arrival_time | format_time), (.early_dismissal_time | format_time), (.notes | gsub("\r\n"; "<br>") | gsub("\n"; "<br>"))])
+  ["date","person","notes","attendance_category","late_arrival_time","early_dismissal_time"],
+  ["----","------","-----","-------------------","----------------","--------------------"],
+  (.[] | [(.attendance_date | format_date), .person, (.notes | gsub("\r\n"; "<br>") | gsub("\n"; "<br>")), (.attendance_category | format_category), (.late_arrival_time | format_time), (.early_dismissal_time | format_time)])
   | @tsv' output.json \
   | sed 's/^/|/' \
   | sed 's/\t/|/g' \
@@ -479,7 +483,7 @@ Open `output.md`
 
 `jq` is a command-line tool for parsing, filtering, and transforming JSON, and `@tsv` is a jq formatter. `jq` extracts arrays from `output.json`, and `@tsv` converts them into tab separated strings.
 
-`sed` is a command-line tool that reads text line by line and applies additional transformations; its basic syntax is `sed 's/find/replace/g'`. `^` means start of line; `\t` means tab character; and `$` means end of line.
+`sed` is a command-line tool that reads text line by line and applies additional transformations; its basic syntax is `sed 's/find/replace/g'`. `^` means start of line; `\t` means tab character; `$` means end of line; and `g` means global.
 
 # Note
 
