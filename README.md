@@ -251,6 +251,8 @@ jq --slurpfile names grade8.json '
 ' *-attendance.json > filtered8.json
 ```
 
+`person_id` in `0-attendance.json`, `1-attendance.json`, `2-attendance.json`, `3-attendance.json`, etc. is equivalent to `student_id` in `grade8.json`. So, we are filtering by keeping data records in each attendance file in which `person_id`=`student_id`. "*" in `*-attendance.json` will make the command parse all the attendance files.
+
 You might ask: Why generate multiple temporary JSON files and then combine them into `filtered8.json`? The answer to that question is: Otherwise, the parallel processes corrupted `filtered8.json`
 
 Next, filter for notes containing "shadow," or "visit," or "tour."
@@ -354,59 +356,70 @@ fi
 Filter changed data with the regular expression and Claude (or another AI assistant).
 
 ```bash
-jq --slurp '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' changed.json > filtered8v.json # changed filtered8.json to changed.json, but keep the sanitize command, Claude prompt, and clean command as they are
+jq --slurp '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' changed.json > filtered8v.json # changed filtered8.json to changed.json
+
+# keep the sanitize command, Claude prompt, and clean command as they are
+
+jq --slurpfile lookup filtered8v_ai.json '
+  ($lookup[0] | map(.id)) as $ids |
+  [.[] | select(.id | IN($ids[]))]
+' filtered8v.json > output_changed.json # changed output.json to output_changed.json
 ```
 
 (If you choose another AI assistant, though, do not choose the assistant if it is just because the assistant is faster. Test its responses against what you would receive using my Claude Sonnet prompt. Not that, say, ChatGPT or Gemini would not work, but I did not test them.)
 
-Use `output.json`, again, as a reference file. If it exists, update its records that have changed. It it does not exist, essentially all its records are new.
+Then, if `output.json` exists update its records. It it does not exist, essentially all its records are new.
 
 ```bash
 if [ -f output.json ]; then
-  jq --slurpfile changed filtered8v_ai.json '
-  ($changed[0] | map({key: (.id | tostring), value: .}) | from_entries) as $changes |
-  [.[] | if $changes[.id | tostring] then $changes[.id | tostring] else . end]
-' output.json > output_updated.json && \
+  jq --slurpfile changed output_changed.json '
+    ($changed[0] | map({key: (.id | tostring), value: .}) | from_entries) as $changes |
+    ($changed[0] | map(.id)) as $new_ids |
+    [.[] | if $changes[.id | tostring] then $changes[.id | tostring] else . end] +
+    [$changed[0][] | select(.id | IN(map(.id)[] | . ) | not)]
+  ' output.json > output_updated.json && \
   mv output_updated.json output.json
 else
-  jq --slurpfile lookup filtered8v_ai.json '
-    ($lookup[0] | map(.id)) as $ids |
-    [.[] | select(.id | IN($ids[]))]
-  ' filtered8v.json > output.json
+  cp output_changed.json output.json
 fi
 ```
 
-We would just need to check that `output.json` exists, and add `-p` option to `mkdir temp/` command in case the folder already exists.
+##### Data Workflow and Result
 
-##### Data Workflow
+Now that we have addressed how to run, and optimize, our query using the Veracross API, so that we can achieve more refined data record entries, let us summarize the workflow.
 
-Essentially, we retrieve student records dated Sep 1 to mid-Jun, and then we filter them: first with a regular expression, and then with an AI assistant.
+Essentially, we retrieve student records dated Sep 1 to mid-Jun, and then we filter them: first by grade, second with a regular expression, and third with an AI assistant. We focus on data records that have changed.
 
 ```bash
-curl: *.json 
+curl: *-attendance.json
+curl: grade8.json
+      |
+{person_id=student_id only}
+      |
+      v
+filtered8.json
+      |
+  [changed]
       |
 [sha[dw]+ow|visit|\\bv[is]+t\\b|tour]
       |
       v
-filtered.json
+filtered8v.json
       |
-[new/changed]
-      |
-      v
-      |-- {id,notes} -> sanitized.json
-      |                      |
-      |                [AI assistant]
-    {all}                    |
-      |                      v
-      |               filtered_ai.json
-      |                      |
-      +----> {id match} <----+
-                  |
-                  v
-             output.json
+      |--- {id,notes} ---> sanitized.json
+      |                          |
+      |                    [AI assistant]
+    {all}                        |
+      |                          v
+      |                  filtered8v_ai.json
+      |                          |
+      +----> {id match/new} <----+
+                   |
+                   v
+              output.json
 ```
 
-What remains is only student records that reference visiting or revising, touring, or shadow visiting a high school for admissions.
+What remains is student records that reference visiting, touring, or shadow visiting a high school for admissions.
 
 No student records that reference visiting grandparents, family, or siblings. No records referencing doctor, dentist, wellness, or emergency room visits. No sports tournaments (e.g., fencing, golf, soccer, and volleyball). No passport appointments. No records in which a student accompanies a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. No shadow visits to another K-8 school, and no traveling abroad.
 
