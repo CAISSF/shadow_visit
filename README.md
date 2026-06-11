@@ -1,12 +1,12 @@
-# Running Veracross Query Using API
+# Running Veracross Query Using API, and Tracking Sign-Ups
 
-Say we want to query every 8th grade student who is either visiting or touring a high school or is shadowing a high school student.
+Say we want to query every 8th grade student who is either visiting or touring a high school or is shadowing a high school student, as well track who has and has not signed up to do so.
 
 ## TL;DR
 
 ### Step 1: Set Credentials
 
-Retrieve your credentials (see "Testing"), and then in a terminal emulator (e.g., macOS Terminal) run these commands:
+Retrieve your credentials (see "Retrieve Credentials"), and then in a terminal emulator (e.g., macOS Terminal) run these commands:
 
 ```bash
 echo "school_route={subdirectory}" >> .env && \
@@ -113,10 +113,18 @@ if [ -f output.json ]; then
 ' output.json > temp/output_updated.json && \
   mv temp/output_updated.json output.json
 else
-  jq --slurpfile lookup temp/filtered_ai.json '
-    ($lookup[0] | map(.id)) as $ids |
-    [.[] | select(.id | IN($ids[]))]
-  ' temp/filtered.json > output.json 
+  cp temp/changed.json output.json
+fi && \
+
+if [ -f signups.json ]; then
+  jq --slurpfile new temp/output_changed.json '
+    ($new[0] | map(.id)) as $new_ids |
+    [.[] | select(.id | IN($new_ids[]) | not)] + $new[0] |
+    unique_by(.id)
+  ' signups.json > temp/signups_merged.json && \
+  mv temp/signups_merged.json signups.json
+else
+  cp temp/output_changed.json signups.json
 fi && \
 
 rm -rf temp/
@@ -155,7 +163,7 @@ Add **Early Dismissal Time**<br>
 Ascending order by Attendance Date, then ascending order by Person<br>
 You can hide the PERSON: Current Grade field
 
-Unfortunately, in the UI there is no other way to filter entries more. Many remaining entries are not school visits/tours (e.g., student visits family, participates in a tournament, or accompanies a sibling to their high school visit, tour, or shadow visit rather than doing their own school search). We need more granularity!
+Unfortunately, in the UI there is no other way to filter entries more or track sign-ups easily. Many remaining entries are not school visits/tours (e.g., student visits family, participates in a tournament, or accompanies a sibling to their high school visit, tour, or shadow visit rather than doing their own school search). We need more granularity!
 
 ### Running Query Using Veracross API (macOS)
 
@@ -263,7 +271,7 @@ jq --slurp '[.[] | select(.notes // "" | test("shadow|visit|tour"; "i"))]' filte
 
 Entries in `filtered8v.json` will be identical to entries in the Veracross UI, again had you run the query using the UI instead of the API; however, the API returns entries in JSON format, along with additional fields (e.g., `id` which we will use coming up, and `person_id`). (You can also output commands directly in the terminal emulator, however JSON responses can be exceptionally long.)
 
-We will make the entries more readable and tidy up the fields, later. For now, it is important to achieve more granularity so that all remaining entries are school visits/tours.
+We will make the entries more readable, tidy up the fields, and track sign-ups, later. For now, it is important to achieve more granularity so that all remaining entries are school visits/tours.
 
 ##### More Granularity
 
@@ -391,32 +399,32 @@ Now that we have addressed how to run, and optimize, our query using the Veracro
 Essentially, we retrieve student records dated Sep 1 to mid-Jun, and then we filter them: first by grade, second with a regular expression, and third with an AI assistant. We focus on data records that have changed.
 
 ```bash
-curl: *-attendance.json
-curl: grade8.json
-      |
-{person_id=student_id only}
-      |
-      v
-filtered8.json
-      |
-  [changed]
-      |
+      curl: *-attendance.json
+         curl: grade8.json
+                 |
+    {person_id=student_id only}
+                 |
+                 v
+           filtered8.json
+                 |
+             [changed]
+                 |
 [sha[dw]+ow|visit|\\bv[is]+t\\b|tour]
-      |
-      v
-filtered8v.json
-      |
-      |--- {id,notes} ---> sanitized.json
-      |                          |
-      |                    [AI assistant]
-    {all}                        |
-      |                          v
-      |                  filtered8v_ai.json
-      |                          |
-      +----> {id match/new} <----+
-                   |
-                   v
-              output.json
+                 |
+                 v
+          filtered8v.json
+                 |
+                 |--- {id,notes} ---> sanitized.json
+                 |                          |
+                 |                    [AI assistant]
+               {all}                        |
+                 |                          v
+                 |                  filtered8v_ai.json
+                 |                          |
+                 +----> {id match/new} <----+
+                              |
+                              v
+                         output.json
 ```
 
 What remains is student records that reference visiting, touring, or shadow visiting a high school for admissions.
@@ -433,13 +441,13 @@ No student records that reference visiting grandparents, family, or siblings. No
 2. Either manually export the environment variables: `school_route`, `client_id` and `client_secret` with their values OR<p>
 (And this is what I do) Place the environment variables and their values in a `.env` file, and export them by running: `export $(grep --invert-match '^#' .env | xargs)`
 3. _Then_ run the command to retrieve the access token, and then run the API query.
-4. Better yet, create a temporary folder: `mkdir -p temp/`, generate the multiple JSON files in there: `$1-attendance.json` &rarr; `temp/$1-attendance.json` (and, thus, `*.json` &rarr; `temp/*.json`), and once you complete your query clean up the temporary JSON files with `rm -rf temp/`
+4. Better yet, create a temporary folder: `mkdir -p temp/`, generate the multiple JSON files in there: `$1-attendance.json` &rarr; `temp/$1-attendance.json` (and, thus, `*-attendance.json` &rarr; `temp/*-attendance.json`), and once you complete your query clean up the temporary JSON files with `rm -rf temp/`
 5. If any notes in `output.json` contain Windows carriage returns with escape sequences, `\r\n`, or UNIX escape sequences, `\n`, keep them; this way, if you update notes in the Veracross UI via the API, then its UI will display the field correctly.
 > The command to retrieve the access token exports `access_token` environment variable and its value for you. So, do not export `access_token` and its value manually or place in `.env`
 
 ## Format JSON Response like Veracross UI Response
 
-Now, let us make the entries more readable and tidy up the fields.
+Now, let us make the entries more readable and tidy up the fields. We will track sign-ups, afterward.
 
 We will extract Attendance Date, Person, Notes, Attendance Category, Late Arrival Time, and Early Dismissal Time data records from `output.json`, and then export the data into a markdown file.
 
@@ -484,6 +492,41 @@ Open `output.md`
 `jq` is a command-line tool for parsing, filtering, and transforming JSON, and `@tsv` is a jq formatter. `jq` extracts arrays from `output.json`, and `@tsv` converts them into tab separated strings.
 
 `sed` is a command-line tool that reads text line by line and applies additional transformations; its basic syntax is `sed 's/find/replace/g'`. `^` means start of line; `\t` means tab character; `$` means end of line; and `g` means global.
+
+## Tracking Sign-Ups
+
+Every 8th grade student who is either visiting or touring a high school or is shadowing a high school student has signed up to do so. So, let us add the list of students we have filtered to a sign up "sheet" named `signups.json`, unless it already exists in which case simply update it.
+
+```bash
+if [ -f signups.json ]; then
+  jq --slurpfile new output_changed.json '
+    ($new[0] | map(.id)) as $new_ids |
+    [.[] | select(.id | IN($new_ids[]) | not)] + $new[0] |
+    unique_by(.id)
+  ' signups.json > signups_merged.json && \
+  mv signups_merged.json signups.json
+else
+  cp output_changed.json signups.json
+fi
+```
+
+Everyone who is neither visiting, nor touring, nor shadowing has not signed up. `output.json` does not currently display data records for these students, so we will need to relax the output.
+
+Again, if `output.json` exists, update its records. It it does not exist, essentially all its records are new. However, change the reference file from `output_changed.json` to `changed.json`. Recall that `change.json` contains all changed entries before filtering them with the regular expression and the AI assistant.
+
+```bash
+if [ -f output.json ]; then
+  jq --slurpfile changed changed.json '
+  ($changed[0] | map({key: (.id | tostring), value: .}) | from_entries) as $changes |
+  [.[] | if $changes[.id | tostring] then $changes[.id | tostring] else . end]
+' output.json > output_updated.json && \
+  mv output_updated.json output.json
+else
+  cp changed.json output.json
+fi
+```
+
+Also changed in the command is we stripped out codes that would add any missing entries, since `output.json` will now include all students.
 
 # Note
 
