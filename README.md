@@ -67,19 +67,15 @@ curl --silent --get "https://api.veracross.com/$school_route/v3/directory/studen
 
 ### Step 5: Filter the Student Records
 
-Use regular expressions, and focus on records that have changed:
+...And focus on records that have changed:
 
 ```bash
 jq --slurp --slurpfile names temp/grade8.json '
   ($names[0].data | map(.student_id) | map(tostring)) as $ids |
   [.[].data // [] | .[] | select(.person_id | tostring | IN($ids[]))] |
   sort_by(.attendance_date, .person)
-' temp/*-attendance.json > temp/filtered8.json
-```
+' temp/*-attendance.json > temp/filtered8.json && \
 
-### Step 6: Filter with Regular Expression
-
-```bash
 if [ -f output.json ]; then
   jq --slurpfile existing output.json '
     ($existing[0] | map({key: (.id | tostring), value: .notes}) | from_entries) as $old_notes |
@@ -90,8 +86,13 @@ if [ -f output.json ]; then
   ' temp/filtered8.json > temp/changed.json
 else
   cp temp/filtered8.json temp/changed.json
-fi && \
+fi
+```
 
+### Step 6: Filter with Regular Expression
+
+
+```bash
 jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' temp/changed.json > temp/filtered8v.json
 ```
 
