@@ -114,5 +114,40 @@ else
   cp temp/filtered8v_ai.json signups.json
 fi && \
 
+
+# Format JSON Response like Veracross UI Response with Sign-Up Tracking
+jq --raw-output --slurpfile signups signups.json '
+  ($signups[0] | map(.id) | map(tostring)) as $signup_ids |
+  def format_date: 
+    if . == null then ""
+    else split("-") | .[1] + "/" + .[2] + "/" + (.[0][2:]) end;
+
+  def format_category: 
+    if . == 0 then "Present"
+    elif . == 1 then "Absence"
+    elif . == 2 then "Tardy"
+    elif . == 3 then "Early Dismissal"
+    else "Unknown" end;
+
+  def format_time: 
+    if . == null then ""
+    else
+      split("T")[1] | split(":")[0:2] |
+      (.[0] | tonumber) as $h | .[1] as $m |
+      if $h < 12 then
+        (if $h == 0 then "12" else ($h | tostring) end) + ":" + $m + "am"
+      elif $h == 12 then "12:" + $m + "pm"
+      else (($h - 12) | tostring) + ":" + $m + "pm"
+      end
+    end;
+
+  ["date","person","signed_up","notes","attendance_category","late_arrival_time","early_dismissal_time"],
+  ["----","------","---------","-----","-------------------","----------------","--------------------"],
+  (.[] | [(.attendance_date // "" | format_date), (.person // ""), (if (.id | tostring) | IN($signup_ids[]) then "x" else "" end), (.notes // "" | gsub("\r\n"; "<br>") | gsub("\n"; "<br>")), (.attendance_category | format_category), (.late_arrival_time | format_time), (.early_dismissal_time | format_time)])
+  | @tsv' output.json \
+  | sed 's/^/|/' \
+  | sed 's/\t/|/g' \
+  | sed 's/$/|/' > output.md && \
+
 rm -rf temp/ && \
 rm fetch_attendance.sh
