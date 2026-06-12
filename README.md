@@ -4,6 +4,8 @@ Say we want to query every 8th grade student who is either visiting or touring a
 
 ## TL;DR
 
+Feel free to either follow Steps 1-8 below, or customize, make executable and run [script.sh](script.sh)
+
 ### Step 1: Set Credentials
 
 Retrieve your credentials (see "Retrieve Credentials"), and then in a terminal emulator (e.g., macOS Terminal) run these commands:
