@@ -59,7 +59,7 @@ end="2026-06-11" && \
 today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) && \
 end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) && \
 
-seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
+[ $today -le $end ] && seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
 
 curl --silent --get "https://api.veracross.com/$school_route/v3/directory/student" \
   --header "Authorization: Bearer $access_token" \
@@ -361,10 +361,10 @@ end="2026-06-11" # default
 today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) # converts today's date to number of days since start date
 end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) # converts end date to number of days since start date
 
-seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N # replace "0" and "283"
+[ $today -le $end ] && seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N # replace "0" and "283"
 ```
 
-Just make sure to strip the comments after `#` before running the command.
+The command will check if today's date is before or on the end date. Just make sure to strip the comments after `#` before running the command.
 
 ###### Only Filter Modified Notes
 
