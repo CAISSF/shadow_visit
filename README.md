@@ -275,6 +275,8 @@ jq --slurp --slurpfile names grade8.json '
 ' *-attendance.json > filtered8.json
 ```
 
+`jq` is a command-line tool for parsing, filtering, and transforming JSON files. It is powerful, but its syntax is what is.
+
 All the records will initially be wrapped with metadata: `{"data":` and `}`, so the command will also strip it out. `person_id` in `0-attendance.json`, `1-attendance.json`, `2-attendance.json`, `3-attendance.json`, etc. is equivalent to `student_id` in `grade8.json`. So, we are filtering by keeping data records in each attendance file in which `person_id`=`student_id`. "*" in `*-attendance.json` will make the command parse all the attendance files.
 
 You might ask: Why generate multiple temporary JSON files and then combine them into `filtered8.json`? The answer to that question is: Otherwise, the parallel processes corrupted `filtered8.json`
@@ -332,6 +334,8 @@ sed '/^```/d' temp/filtered8v_ai.json | \
 sed -n '/^\[/,/^\]$/p' > temp/filtered8v_ai_clean.json && \
 mv temp/filtered8v_ai_clean.json temp/filtered8v_ai.json
 ```
+
+`sed` is a command-line tool that reads text line by line and applies additional transformations. It has different syntax: Here we are using `sed '/pattern/'`, where `^` means start of line, `d` means delete., `-n` means suppress output except (what `p` is for) matching lines — essentially meaning _extract_ matching lines, `^` means start of line, `\` is an escape character (to treat `[` and `]` literally), `/,/` is a range separator, and `$` means end of line. (To clarity, the second pattern is: ^\[  /,/  ^\]$, that is from a line starting with [ to a line that is exactly ])
 
 ##### Generate Output
 
@@ -573,9 +577,7 @@ jq --raw-output --slurpfile signups signups.json '
 
 Open `output.md`
 
-`jq` is a command-line tool for parsing, filtering, and transforming JSON, and `@tsv` is a jq formatter. `jq` extracts arrays from `output.json`, and `@tsv` converts them into tab separated strings.
-
-`sed` is a command-line tool that reads text line by line and applies additional transformations; its basic syntax is `sed 's/find/replace/g'`. `^` means start of line; `\t` means tab character; `$` means end of line; and `g` means global.
+`@tsv` is a jq formatter that converts arrays into tab separated strings. `sed`, again, has different syntax: Here we are using `sed 's/find/replace/g'`, where `s` means substitute, `^` means start of line, `\t` means tab character, `$` means end of line, and `g` means global.
 
 # Note
 
