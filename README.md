@@ -275,7 +275,7 @@ jq --slurp --slurpfile names grade8.json '
 ' *-attendance.json > filtered8.json
 ```
 
-`jq` is a command-line tool for parsing, filtering, and transforming JSON files. It is powerful, but its syntax is what is.
+`jq` is a command-line tool for parsing, filtering, and transforming JSON files. It is powerful, but its syntax is what is. `($names[0].data | map(.student_id) | map(tostring)) as $ids` builds a list of Grade 8 student IDs from `grade8.json`, and `[.[].data // [] | .[] | select(.person_id | tostring | IN($ids[]))]` keeps only attendance records whose `person_id` is in that list.
 
 All the records will initially be wrapped with metadata: `{"data":` and `}`, so the command will also strip it out. `person_id` in `0-attendance.json`, `1-attendance.json`, `2-attendance.json`, `3-attendance.json`, etc. is equivalent to `student_id` in `grade8.json`. So, we are filtering by keeping data records in each attendance file in which `person_id`=`student_id`. "*" in `*-attendance.json` will make the command parse all the attendance files.
 
@@ -391,7 +391,10 @@ else
 fi
 ```
 
-Filter changed data with the regular expression and Claude (or another AI assistant).
+`($existing[0] | map({key: (.id | tostring), value: .notes}) | from_entries) as $old_notes` builds a lookup table: key -> notes from existing `output.json`, and
+`[.[] | . as $record | select(($old_notes[$record.id | tostring] != null or $record.notes != null) and $old_notes[$record.id | tostring] != $record.notes)]` keeps only records where notes changed or were added.
+
+Then, filter changed data with the regular expression and Claude (or another AI assistant).
 
 ```bash
 jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' changed.json > filtered8v.json # changed filtered8.json to changed.json
@@ -425,7 +428,7 @@ else
 fi
 ```
 
-The command also re-sorts the data records.
+The command is more complex, but essentially... `($changed[0] | map({key: (.id | tostring), value: .}) | from_entries) as $changes` builds a lookup table: key -> full record from `changed.json`, `(map(.id) | map(tostring)) as $existing_ids | ([.[] | if $changes[.id | tostring] then $changes[.id | tostring] else . end]` updates matching records in `output.json`, and `[$changed[0][] | select(.id | tostring | IN($existing_ids[]) | not)])` appends records that do not exist yet. The command also re-sorts the data records.
 
 ##### Suggestions
 
@@ -445,13 +448,11 @@ The command also re-sorts the data records.
 
 Every 8th grade student who is either visiting or touring a high school or is shadowing a high school student has signed up to do so on certain days. So, let us add the `id` of students we have filtered to a sign up "sheet" named `signups.json`, unless it already exists in which case simply update it. (Again, `id` is a student's attendance ID, but you can look at it as a student's ID for a particular day.)
 
-
 ```bash
 if [ -f signups.json ]; then
   jq --slurpfile new filtered8v_ai.json '
     ($new[0] | map(.id)) as $new_ids |
-    [.[] | select(.id | IN($new_ids[]) | not)] + $new[0] |
-    unique_by(.id)
+    [.[] | select(.id | IN($new_ids[]) | not)] + $new[0]
   ' signups.json > signups_merged.json && \
   mv signups_merged.json signups.json
 else
@@ -459,7 +460,9 @@ else
 fi
 ```
 
-Everyone who is neither visiting, nor touring, nor shadowing has not signed up. `output.json` does not currently display data records for these students, so we will need to relax the output.
+`($new[0] | map(.id)) as $new_ids | [.[] | select(.id | IN($new_ids[]) | not)] + $new[0] | unique_by(.id)` builds a list of new signup IDs from `filtered8v_ai.json`, keeps existing signups not in new batch, and appends new ones.
+
+Onto everyone who is neither visiting, nor touring, nor shadowing, they have not signed up. `output.json` does not currently display data records for these students, so we will need to relax the output.
 
 Again, if `output.json` exists, update its records. It it does not exist, essentially all its records are new. However, change the reference file from `output_changed.json` to `changed.json`. Recall that `change.json` contains all changed entries before filtering them with the regular expression and the AI assistant.
 
@@ -577,7 +580,7 @@ jq --raw-output --slurpfile signups signups.json '
 
 Open `output.md`
 
-`@tsv` is a jq formatter that converts arrays into tab separated strings. `sed`, again, has different syntax: Here we are using `sed 's/find/replace/g'`, where `s` means substitute, `^` means start of line, `\t` means tab character, `$` means end of line, and `g` means global.
+`($signups[0] | map(.id) | map(tostring)) as $signup_ids` builds a list of signed-up IDs as strings for lookup. `@tsv` is a jq formatter that converts arrays into tab separated strings. `sed`, again, has different syntax: Here we are using `sed 's/find/replace/g'`, where `s` means substitute, `^` means start of line, `\t` means tab character, `$` means end of line, and `g` means global.
 
 # Note
 
