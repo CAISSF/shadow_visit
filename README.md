@@ -45,7 +45,7 @@ EOF
 chmod +x fetch_attendance.sh
 ```
 
-### Step 4A: Retrieve Student Records
+### Step 4: Retrieve Student Records
 
 ```bash
 mkdir -p temp/ && \
@@ -65,7 +65,7 @@ curl --silent --get "https://api.veracross.com/$school_route/v3/directory/studen
   --data-urlencode "grade_level=8" > temp/grade8.json
 ```
 
-### Step 4B: Filter the Student Records
+### Step 5: Filter the Student Records
 
 Use regular expressions, and focus on records that have changed:
 
@@ -77,7 +77,7 @@ jq --slurp --slurpfile names temp/grade8.json '
 ' temp/*-attendance.json > temp/filtered8.json
 ```
 
-### Step 4C: Filter with Regular Expression
+### Step 6: Filter with Regular Expression
 
 ```bash
 if [ -f output.json ]; then
@@ -95,7 +95,7 @@ fi && \
 jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' temp/changed.json > temp/filtered8v.json
 ```
 
-### Step 4D: Filter with Claude (or Another AI Assistant)
+### Step 7: Filter with Claude (or Another AI Assistant)
 
 ```bash
 jq '[.[] | {id, notes}]' temp/filtered8v.json > temp/sanitized.json && \
@@ -112,7 +112,7 @@ sed -n '/^\[/,/^\]$/p' temp/filtered8v_ai.json > temp/filtered8v_ai_clean.json &
 mv temp/filtered8v_ai_clean.json temp/filtered8v_ai.json
 ```
 
-### Step 4E: Output or Update Results, and Track Sign-Ups
+### Step 8: Output or Update Results, and Track Sign-Ups
 
 ```bash
 if [ -f output.json ]; then
