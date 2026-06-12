@@ -16,7 +16,8 @@ export access_token=$(curl --silent --request POST https://accounts.veracross.co
   --data "grant_type=client_credentials" \
   --data "client_id=$client_id" \
   --data "client_secret=$client_secret" \
-  --data "scope=master_attendance:list directory.student:list" | jq --raw-output '.access_token') && \
+  --data "scope=master_attendance:list directory.student:list" | 
+  jq --raw-output '.access_token') && \
 
 
 # Step 3: Create a Script
