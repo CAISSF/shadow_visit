@@ -4,7 +4,7 @@ Say we want to query every 8th grade student who is either visiting or touring a
 
 ## TL;DR
 
-Feel free to either follow Steps 1-8 below, or customize, make executable and run [script.sh](script.sh)
+Feel free to either follow Steps 1-8 below and see "Format JSON Response like Veracross UI Response with Sign-Up Tracking," or customize, make executable and run [script.sh](script.sh)
 
 ### Step 1: Set Credentials
 
