@@ -275,9 +275,9 @@ jq --slurp --slurpfile names grade8.json '
 ' *-attendance.json > filtered8.json
 ```
 
-`jq` is a command-line tool for parsing, filtering, and transforming JSON files. It is powerful, but its syntax is what is. `($names[0].data | map(.student_id) | map(tostring)) as $ids` builds a list of Grade 8 student IDs from `grade8.json`, and `[.[].data // [] | .[] | select(.person_id | tostring | IN($ids[]))]` keeps only attendance records whose `person_id` is in that list.
+`jq` is a command-line tool for parsing, filtering, and transforming JSON files. It is powerful, but its syntax can be complex; in simplest form, its syntax is `jq [flags] 'filter' input.json > output.json`. `--slurp` reads all input files into a single array, `--slurpfile` side loads another file, and for parts of the filter: `($names[0].data | map(.student_id) | map(tostring)) as $ids` builds a list of Grade 8 student IDs from `grade8.json`, and `[.[].data // [] | .[] | select(.person_id | tostring | IN($ids[]))]` keeps only attendance records whose `person_id` is in that list.
 
-All the records will initially be wrapped with metadata: `{"data":` and `}`, so the command will also strip it out. `person_id` in `0-attendance.json`, `1-attendance.json`, `2-attendance.json`, `3-attendance.json`, etc. is equivalent to `student_id` in `grade8.json`. So, we are filtering by keeping data records in each attendance file in which `person_id`=`student_id`. "*" in `*-attendance.json` will make the command parse all the attendance files.
+`person_id` in `0-attendance.json`, `1-attendance.json`, `2-attendance.json`, `3-attendance.json`, etc. is equivalent to `student_id` in `grade8.json`. So, to state the second part of the filter another way: We are filtering by keeping data records in each attendance file in which `person_id`=`student_id`. "*" in `*-attendance.json` means all the attendance files, and the `--slurp` flag allows us to input and parse them all. All the records will initially be wrapped with metadata: `{"data":` and `}`, so the command will also strip it out. 
 
 You might ask: Why generate multiple temporary JSON files and then combine them into `filtered8.json`? The answer to that question is: Otherwise, the parallel processes corrupted `filtered8.json`
 
