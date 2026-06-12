@@ -84,7 +84,8 @@ while true; do
   fi
 done && \
 
-sed -n '/^\[/,/^\]$/p' temp/filtered8v_ai.json > temp/filtered8v_ai_clean.json && \
+sed '/^```/d' temp/filtered8v_ai.json | \
+sed -n '/^\[/,/^\]$/p' > temp/filtered8v_ai_clean.json && \
 mv temp/filtered8v_ai_clean.json temp/filtered8v_ai.json && \
 
 

@@ -109,7 +109,8 @@ while true; do
   fi
 done && \
 
-sed -n '/^\[/,/^\]$/p' temp/filtered8v_ai.json > temp/filtered8v_ai_clean.json && \
+sed '/^```/d' temp/filtered8v_ai.json | \
+sed -n '/^\[/,/^\]$/p' > temp/filtered8v_ai_clean.json && \
 mv temp/filtered8v_ai_clean.json temp/filtered8v_ai.json
 ```
 
@@ -324,8 +325,9 @@ Haiku model is too aggressive at excluding data, and the Sonnet model may miss d
 Sometimes, not will Claude produce an empty response, but also Claude may format the JSON array incorrectly — even if you additionally prompt it to start the array with `[` and end it with `]`, and even if you additionally prompt it: `"...No preamble, no explanation, no markdown, no code fences."` So, I would run an extra command to ensure that the array is formatted correctly:
 
 ```bash
-sed -n '/^\[/,/^\]$/p' filtered8v_ai.json > filtered8v_ai_clean.json && \
-mv filtered8v_ai_clean.json filtered8v_ai.json
+sed '/^```/d' temp/filtered8v_ai.json | \
+sed -n '/^\[/,/^\]$/p' > temp/filtered8v_ai_clean.json && \
+mv temp/filtered8v_ai_clean.json temp/filtered8v_ai.json
 ```
 
 ##### Generate Output
