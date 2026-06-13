@@ -254,6 +254,8 @@ The command will also run at most two cycles at a time (`--max-procs=2`) with a 
 
 `xargs` commands must be short, otherwise the terminal emulator will complain: `xargs: command line cannot be assembled, too long`. This is why we created the script file, instead of placing the script contents in the `xargs` command.
 
+You _can_ call other and multiple query parameters at once, but the others (`on_or_after_last_modified_date`, `on_or_before_last_modified_date`, `person_id`) were not needed to retrieve all attendance records.
+
 ##### Retrieve Grade 8 Student Records
 
 PERSON: Current Grade et al.
@@ -264,6 +266,8 @@ curl --silent --get "https://api.veracross.com/{subdirectory}/v3/directory/stude
   --header "X-Page-Size: 1000" \
   --data-urlencode "grade_level=8" > grade8.json
 ```
+
+Again, you _can_ call other and multiple query parameters at once, but the others (`campus`, `campus_id`, `first_name`, etc.) were not needed to retrieve grade 8 student records.
 
 ##### Process Data Locally
 
