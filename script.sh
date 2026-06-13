@@ -128,6 +128,8 @@ rm fetch_attendance.sh
 
 
 # Format JSON Response like Veracross UI Response with Sign-Up Tracking
+
+## Markdown
 jq --raw-output --slurpfile signups signups.json '
   ($signups[0] | map(.id) | map(tostring)) as $signup_ids |
 
@@ -169,3 +171,71 @@ def format_time:
   | sed 's/^/|/' \
   | sed 's/\t/|/g' \
   | sed 's/$/|/' > output.md
+
+## HTML
+{
+  cat << 'HTMLHEAD'
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: sans-serif; font-size: 14px; padding: 16px; }
+  table { border-collapse: collapse; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; }
+  tr:nth-child(even) { background: #fafafa; }
+  .signed-up { text-align: center; }
+</style>
+</head>
+<body>
+<table>
+<thead>
+<tr><th>Date</th><th>Person</th><th>Signed Up</th><th>Notes</th><th>Attendance Category</th><th>Late Arrival</th><th>Early Dismissal</th></tr>
+</thead>
+<tbody>
+HTMLHEAD
+
+  jq --raw-output --slurpfile signups signups.json '
+    ($signups[0] | map(.id) | map(tostring)) as $signup_ids |
+
+    def format_date:
+      if . == null then ""
+      else split("-") | .[1] + "/" + .[2] + "/" + (.[0][2:]) end;
+
+    def format_category:
+      if . == 0 then "Present"
+      elif . == 1 then "Absence"
+      elif . == 2 then "Tardy"
+      elif . == 3 then "Early Dismissal"
+      else "Unknown" end;
+
+    def format_time:
+      if . == null then ""
+      else
+        split("T")[1] | split(":")[0:2] |
+        (.[0] | tonumber) as $h | .[1] as $m |
+        if $h < 12 then
+          (if $h == 0 then "12" else ($h | tostring) end) + ":" + $m + "am"
+        elif $h == 12 then "12:" + $m + "pm"
+        else (($h - 12) | tostring) + ":" + $m + "pm"
+        end
+      end;
+
+    .[] |
+    "<tr>" +
+    "<td>" + (.attendance_date // "" | format_date) + "</td>" +
+    "<td>" + (.person // "") + "</td>" +
+    "<td class=\"signed-up\">" + (if (.id | tostring) | IN($signup_ids[]) then "&#x2713;" else "" end) + "</td>" +
+    "<td>" + (.notes // "" | gsub("\r\n"; "<br>") | gsub("\n"; "<br>")) + "</td>" +
+    "<td>" + (.attendance_category | format_category) + "</td>" +
+    "<td>" + (.late_arrival_time | format_time) + "</td>" +
+    "<td>" + (.early_dismissal_time | format_time) + "</td>" +
+    "</tr>"
+  ' output.json
+
+  echo '</tbody>
+</table>
+</body>
+</html>'
+} > output.html
