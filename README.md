@@ -11,6 +11,7 @@ Feel free to either follow Steps 1-8 below and see "Format JSON Response like Ve
 Retrieve your credentials (see "Retrieve Credentials"), and then in a terminal emulator (e.g., macOS Terminal) run these commands:
 
 ```bash
+[[ -f .env ]] || touch .env && \
 grep --quiet "^school_route=" .env || \
   echo "school_route={subdirectory}" >> .env && \
 grep --quiet "^client_id=" .env || \
@@ -26,7 +27,7 @@ export $(grep --invert-match '^#' .env | xargs)
 Run this command:
 
 ```bash
-export access_token=$(curl --silent --request POST https://accounts.veracross.com/$school_route/oauth/token \
+export access_token=$(curl --silent --request POST "https://accounts.veracross.com/$school_route/oauth/token" \
   --data "grant_type=client_credentials" \
   --data "client_id=$client_id" \
   --data "client_secret=$client_secret" \
@@ -60,7 +61,8 @@ end="2026-06-11" && \
 today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) && \
 end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) && \
 
-[ $today -le $end ] && seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
+[ $today -le $end ] && \
+  seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
 
 curl --silent --get "https://api.veracross.com/$school_route/v3/directory/student" \
   --header "Authorization: Bearer $access_token" \
@@ -96,7 +98,8 @@ fi
 
 
 ```bash
-jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' temp/changed.json > temp/filtered8v.json
+jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' \
+  temp/changed.json > temp/filtered8v.json
 ```
 
 ### Step 7: Filter with Claude (or Another AI Assistant)
@@ -106,10 +109,9 @@ jq '[.[] | {id, notes}]' temp/filtered8v.json > temp/sanitized.json && \
 
 while true; do
   claude --model sonnet --permission-mode auto \
-  "From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > temp/filtered8v_ai.json
-  if [ -s temp/filtered8v_ai.json ]; then
-    break
-  fi
+    "From temp/sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." \
+    > temp/filtered8v_ai.json
+  [ -s temp/filtered8v_ai.json ] && break
 done && \
 
 sed '/^```/d' temp/filtered8v_ai.json | \
@@ -127,7 +129,7 @@ if [ -f output.json ]; then
     ([.[] | if $changes[.id | tostring] then $changes[.id | tostring] else . end] +
     [$changed[0][] | select(.id | tostring | IN($existing_ids[]) | not)]) |
     sort_by(.attendance_date, .person)
-  ' output.json > temp/output_updated.json && \
+  ' output.json > temp/output_updated.json
   mv temp/output_updated.json output.json
 else
   cp temp/changed.json output.json
@@ -138,7 +140,7 @@ if [ -f signups.json ]; then
     ($new[0] | map(.id)) as $new_ids |
     [.[] | select(.id | IN($new_ids[]) | not)] + $new[0] |
     unique_by(.id)
-  ' signups.json > temp/signups_merged.json && \
+  ' signups.json > temp/signups_merged.json
   mv temp/signups_merged.json signups.json
 else
   cp temp/filtered8v_ai.json signups.json
@@ -209,7 +211,7 @@ In your newly created OAuth application, enable two scopes: `master_attendance:l
 In a terminal emulator (e.g., macOS Terminal), run the command:
 
 ```bash
-export access_token=$(curl --silent --request POST https://accounts.veracross.com/{subdirectory}/oauth/token \
+export access_token=$(curl --silent --request POST "https://accounts.veracross.com/{subdirectory}/oauth/token" \
   --data "grant_type=client_credentials" \
   --data "client_id={your_client_id}" \
   --data "client_secret={your_client_secret}" \
@@ -284,7 +286,8 @@ You might ask: Why generate multiple temporary JSON files and then combine them 
 Next, filter for notes containing "shadow," or "visit," or "tour."
 
 ```bash
-jq '[.[] | select(.notes // "" | test("shadow|visit|tour"; "i"))]' filtered8.json > filtered8v.json
+jq '[.[] | select(.notes // "" | test("shadow|visit|tour"; "i"))]' \
+  filtered8.json > filtered8v.json
 ```
 
 Entries in `filtered8v.json` will be identical to entries in the Veracross UI, again had you run the query using the UI instead of the API; however, the API returns entries in JSON format, along with additional fields (e.g., `id` which we will use coming up, and `person_id`). (You can also output commands directly in the terminal emulator, however JSON responses can be exceptionally long.)
@@ -298,7 +301,8 @@ We will track sign-ups, make the entries more readable, and tidy up the fields, 
 Filter for notes containing "shadow," or "visit," or "tour," _or_ any common misspellings of each.
 
 ```bash
-jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' filtered8.json > filtered8v.json
+jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' \
+  filtered8.json > filtered8v.json
 ```
 
 `sha[dw]+ow|visit|\\bv[is]+t\\b|tour` is a regular expression that will catch misspellings of "shadow" and "visit" (e.g., _shawdow_ and _vist_). The regular expression also goes a step further by excluding misspellings of "visit" that are unrelated (e.g., _cavity_ and _activist_); notice the word boundary anchors, `\\b`. ("Tour" is not misspelled commonly.)
@@ -316,10 +320,9 @@ Prompt Claude (or another AI assistant) to extract `id` and `notes` data from `s
 ```bash
 while true; do
   claude --model sonnet --permission-mode auto \
-  "From sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." > filtered8v_ai.json
-  if [ -s filtered8v_ai.json ]; then
-    break
-  fi
+    "From sanitized.json, return data in which the id is visiting, touring, or shadow visiting a school for high school admissions purposes. Exclude data where 'visit', 'tour', 'shadow', or common misspellings of such refer to something else — such as visiting family, doctor visits, sports tournaments, or other non-school-search activities. Also exclude data where id is accompanying a sibling to their high school visit, tour, or shadow visit rather than doing their own school search. If data is ambiguous, then include the data anyway. Double check if any data is missing. Output only the raw JSON array." \
+    > filtered8v_ai.json
+  [ -s filtered8v_ai.json ] && break
 done
 ```
 
@@ -366,7 +369,8 @@ end="2026-06-11" # default
 today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) # converts today's date to number of days since start date
 end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 )) # converts end date to number of days since start date
 
-[ $today -le $end ] && seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N # replace "0" and "283"
+[ $today -le $end ] && \
+  seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N # replace "0" and "283"
 ```
 
 The command will check if today's date is before or on the end date. Just make sure to strip the comments after `#` before running the command.
@@ -397,9 +401,10 @@ fi
 Then, filter changed data with the regular expression and Claude (or another AI assistant).
 
 ```bash
-jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' changed.json > filtered8v.json # changed filtered8.json to changed.json
+jq '[.[] | select(.notes // "" | test("sha[dw]+ow|visit|\\bv[is]+t\\b|tour"; "i"))]' \
+  changed.json > filtered8v.json # changed filtered8.json to changed.json && \
 
-# keep the sanitize command, Claude prompt, and clean command as they are
+# keep the sanitize command, Claude prompt, and clean command as they are && \
 
 jq --slurpfile lookup filtered8v_ai.json '
   ($lookup[0] | map(.id)) as $ids |
@@ -546,18 +551,19 @@ Run the entire command:
 ```bash
 jq --raw-output --slurpfile signups signups.json '
   ($signups[0] | map(.id) | map(tostring)) as $signup_ids |
-  def format_date: 
+
+  def format_date:
     if . == null then ""
     else split("-") | .[1] + "/" + .[2] + "/" + (.[0][2:]) end;
 
-  def format_category: 
+  def format_category:
     if . == 0 then "Present"
     elif . == 1 then "Absence"
     elif . == 2 then "Tardy"
     elif . == 3 then "Early Dismissal"
     else "Unknown" end;
 
-  def format_time: 
+  def format_time:
     if . == null then ""
     else
       split("T")[1] | split(":")[0:2] |
@@ -571,7 +577,15 @@ jq --raw-output --slurpfile signups signups.json '
 
   ["date","person","signed_up","notes","attendance_category","late_arrival_time","early_dismissal_time"],
   ["----","------","---------","-----","-------------------","----------------","--------------------"],
-  (.[] | [(.attendance_date // "" | format_date), (.person // ""), (if (.id | tostring) | IN($signup_ids[]) then "x" else "" end), (.notes // "" | gsub("\r\n"; "<br>") | gsub("\n"; "<br>")), (.attendance_category | format_category), (.late_arrival_time | format_time), (.early_dismissal_time | format_time)])
+  (.[] | [
+    (.attendance_date // "" | format_date),
+    (.person // ""),
+    (if (.id | tostring) | IN($signup_ids[]) then "x" else "" end),
+    (.notes // "" | gsub("\r\n"; "<br>") | gsub("\n"; "<br>")),
+    (.attendance_category | format_category),
+    (.late_arrival_time | format_time),
+    (.early_dismissal_time | format_time)
+  ])
   | @tsv' output.json \
   | sed 's/^/|/' \
   | sed 's/\t/|/g' \
