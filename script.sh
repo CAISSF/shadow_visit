@@ -188,7 +188,8 @@ def format_time:
   th.sort-asc::after { content: " ▲"; font-size: 11px; }
   th.sort-desc::after { content: " ▼"; font-size: 11px; }
   tr:nth-child(even) { background: #fafafa; }
-  .signed-up { text-align: center; }
+  .signed-up, .email-check { text-align: center; }
+  .email-check input { cursor: pointer; width: 16px; height: 16px; }
 </style>
 </head>
 <body>
@@ -197,6 +198,9 @@ def format_time:
 <tr>
   <th>Date</th>
   <th>Person</th>
+  <th>Email 1</th>
+  <th>Email 2</th>
+  <th>Email 3</th>
   <th>Signed Up</th>
   <th>Notes</th>
   <th>Attendance Category</th>
@@ -234,9 +238,12 @@ HTMLHEAD
       end;
 
     .[] |
-    "<tr>" +
+    "<tr data-id=\"" + (.id | tostring) + "\">" +
     "<td>" + (.attendance_date // "" | format_date) + "</td>" +
     "<td>" + (.person // "") + "</td>" +
+    "<td class=\"email-check\"><input type=\"checkbox\"></td>" +
+    "<td class=\"email-check\"><input type=\"checkbox\"></td>" +
+    "<td class=\"email-check\"><input type=\"checkbox\"></td>" +
     "<td class=\"signed-up\">" + (if (.id | tostring) | IN($signup_ids[]) then "&#x2713;" else "" end) + "</td>" +
     "<td>" + (.notes // "" | gsub("\r\n"; "<br>") | gsub("\n"; "<br>")) + "</td>" +
     "<td>" + (.attendance_category | format_category) + "</td>" +
@@ -250,39 +257,48 @@ HTMLHEAD
 <script>
   const table = document.getElementById("results");
   const headers = table.querySelectorAll("th");
+  const CHECKBOX_COLS = new Set([2, 3, 4]);
+  const SIGNUP_COL = 5;
   let sortCol = -1, sortAsc = true;
+
+  const text = (row, c) => row.cells[c].textContent.trim();
+  function boolVal(row, c) {
+    if (CHECKBOX_COLS.has(c)) return row.cells[c].querySelector("input").checked ? 1 : 0;
+    return text(row, c) ? 1 : 0;
+  }
+
+  // Restore checkbox state from localStorage
+  table.querySelectorAll("tbody tr").forEach(row => {
+    CHECKBOX_COLS.forEach(col => {
+      const cb = row.cells[col].querySelector("input");
+      if (localStorage.getItem("cb_" + row.dataset.id + "_" + col) === "1") cb.checked = true;
+      cb.addEventListener("change", () =>
+        localStorage.setItem("cb_" + row.dataset.id + "_" + col, cb.checked ? "1" : "0")
+      );
+    });
+  });
 
   headers.forEach((th, col) => {
     th.addEventListener("click", () => {
-      if (sortCol === col) {
-        sortAsc = !sortAsc;
-      } else {
-        sortCol = col;
-        sortAsc = true;
-      }
+      if (sortCol === col) { sortAsc = !sortAsc; } else { sortCol = col; sortAsc = true; }
       headers.forEach(h => h.classList.remove("sort-asc", "sort-desc"));
       th.classList.add(sortAsc ? "sort-asc" : "sort-desc");
 
       const tbody = table.querySelector("tbody");
       const rows = Array.from(tbody.querySelectorAll("tr"));
-      const cell = (row, c) => row.cells[c].textContent.trim();
       rows.sort((a, b) => {
         let primary;
-        if (col === 2) {
-          const aVal = cell(a, col) ? 1 : 0;
-          const bVal = cell(b, col) ? 1 : 0;
-          primary = sortAsc ? bVal - aVal : aVal - bVal;
+        if (CHECKBOX_COLS.has(col) || col === SIGNUP_COL) {
+          primary = sortAsc ? boolVal(b, col) - boolVal(a, col) : boolVal(a, col) - boolVal(b, col);
         } else {
-          const aText = cell(a, col), bText = cell(b, col);
+          const aText = text(a, col), bText = text(b, col);
           if (!aText && bText) return 1;
           if (aText && !bText) return -1;
-          primary = sortAsc
-            ? aText.localeCompare(bText)
-            : bText.localeCompare(aText);
+          primary = sortAsc ? aText.localeCompare(bText) : bText.localeCompare(aText);
         }
         if (primary !== 0) return primary;
-        if (col === 0) return cell(a, 1).localeCompare(cell(b, 1));
-        if (col === 2) return cell(a, 0).localeCompare(cell(b, 0)) || cell(a, 1).localeCompare(cell(b, 1));
+        if (col === 0) return text(a, 1).localeCompare(text(b, 1));
+        if (col === SIGNUP_COL) return text(a, 0).localeCompare(text(b, 0)) || text(a, 1).localeCompare(text(b, 1));
         return 0;
       });
       rows.forEach(row => tbody.appendChild(row));
