@@ -148,6 +148,7 @@ fi && \
 
 rm -rf temp/ && \
 rm fetch_attendance.sh
+# preserve .env, output.json, and signups.json
 ```
 
 The commands will store your credentials and make them available, retrieve and store your access token and make it available, create a script and make it executable, and cleanly, sensitively, thoroughly, and efficiently run the query, output results, and track sign-ups. Your credentials do not expire, but your access code _does_. Data processed in AI is sanitized, so feel free to utilize an alternative AI assistant.

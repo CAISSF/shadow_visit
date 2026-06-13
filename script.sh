@@ -118,6 +118,10 @@ else
   cp temp/filtered8v_ai.json signups.json
 fi
 
+rm -rf temp/
+rm fetch_attendance.sh
+# preserve .env, output.json, and signups.json
+
 
 # Format JSON Response like Veracross UI Response with Sign-Up Tracking
 jq --raw-output --slurpfile signups signups.json '
@@ -161,6 +165,3 @@ def format_time:
   | sed 's/^/|/' \
   | sed 's/\t/|/g' \
   | sed 's/$/|/' > output.md
-
-rm -rf temp/
-rm fetch_attendance.sh
