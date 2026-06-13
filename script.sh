@@ -265,10 +265,13 @@ HTMLHEAD
 
       const tbody = table.querySelector("tbody");
       const rows = Array.from(tbody.querySelectorAll("tr"));
+      const cell = (row, c) => row.cells[c].textContent.trim();
       rows.sort((a, b) => {
-        const aText = a.cells[col].textContent.trim();
-        const bText = b.cells[col].textContent.trim();
-        return sortAsc ? aText.localeCompare(bText) : bText.localeCompare(aText);
+        const primary = sortAsc
+          ? cell(a, col).localeCompare(cell(b, col))
+          : cell(b, col).localeCompare(cell(a, col));
+        if (primary !== 0 || col !== 2) return primary;
+        return cell(a, 0).localeCompare(cell(b, 0)) || cell(a, 1).localeCompare(cell(b, 1));
       });
       rows.forEach(row => tbody.appendChild(row));
     });
