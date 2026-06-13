@@ -273,9 +273,12 @@ HTMLHEAD
           const bVal = cell(b, col) ? 1 : 0;
           primary = sortAsc ? bVal - aVal : aVal - bVal;
         } else {
+          const aText = cell(a, col), bText = cell(b, col);
+          if (!aText && bText) return 1;
+          if (aText && !bText) return -1;
           primary = sortAsc
-            ? cell(a, col).localeCompare(cell(b, col))
-            : cell(b, col).localeCompare(cell(a, col));
+            ? aText.localeCompare(bText)
+            : bText.localeCompare(aText);
         }
         if (primary !== 0) return primary;
         if (col === 0) return cell(a, 1).localeCompare(cell(b, 1));
