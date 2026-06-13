@@ -183,15 +183,26 @@ def format_time:
   body { font-family: sans-serif; font-size: 14px; padding: 16px; }
   table { border-collapse: collapse; }
   th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; vertical-align: top; }
-  th { background: #f0f0f0; }
+  th { background: #f0f0f0; cursor: pointer; user-select: none; white-space: nowrap; }
+  th:hover { background: #e0e0e0; }
+  th.sort-asc::after { content: " ▲"; font-size: 11px; }
+  th.sort-desc::after { content: " ▼"; font-size: 11px; }
   tr:nth-child(even) { background: #fafafa; }
   .signed-up { text-align: center; }
 </style>
 </head>
 <body>
-<table>
+<table id="results">
 <thead>
-<tr><th>Date</th><th>Person</th><th>Signed Up</th><th>Notes</th><th>Attendance Category</th><th>Late Arrival</th><th>Early Dismissal</th></tr>
+<tr>
+  <th>Date</th>
+  <th>Person</th>
+  <th>Signed Up</th>
+  <th>Notes</th>
+  <th>Attendance Category</th>
+  <th>Late Arrival</th>
+  <th>Early Dismissal</th>
+</tr>
 </thead>
 <tbody>
 HTMLHEAD
@@ -236,6 +247,33 @@ HTMLHEAD
 
   echo '</tbody>
 </table>
+<script>
+  const table = document.getElementById("results");
+  const headers = table.querySelectorAll("th");
+  let sortCol = -1, sortAsc = true;
+
+  headers.forEach((th, col) => {
+    th.addEventListener("click", () => {
+      if (sortCol === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortCol = col;
+        sortAsc = true;
+      }
+      headers.forEach(h => h.classList.remove("sort-asc", "sort-desc"));
+      th.classList.add(sortAsc ? "sort-asc" : "sort-desc");
+
+      const tbody = table.querySelector("tbody");
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+      rows.sort((a, b) => {
+        const aText = a.cells[col].textContent.trim();
+        const bText = b.cells[col].textContent.trim();
+        return sortAsc ? aText.localeCompare(bText) : bText.localeCompare(aText);
+      });
+      rows.forEach(row => tbody.appendChild(row));
+    });
+  });
+</script>
 </body>
 </html>'
 } > output.html
