@@ -267,9 +267,16 @@ HTMLHEAD
       const rows = Array.from(tbody.querySelectorAll("tr"));
       const cell = (row, c) => row.cells[c].textContent.trim();
       rows.sort((a, b) => {
-        const primary = sortAsc
-          ? cell(a, col).localeCompare(cell(b, col))
-          : cell(b, col).localeCompare(cell(a, col));
+        let primary;
+        if (col === 2) {
+          const aVal = cell(a, col) ? 1 : 0;
+          const bVal = cell(b, col) ? 1 : 0;
+          primary = sortAsc ? bVal - aVal : aVal - bVal;
+        } else {
+          primary = sortAsc
+            ? cell(a, col).localeCompare(cell(b, col))
+            : cell(b, col).localeCompare(cell(a, col));
+        }
         if (primary !== 0) return primary;
         if (col === 0) return cell(a, 1).localeCompare(cell(b, 1));
         if (col === 2) return cell(a, 0).localeCompare(cell(b, 0)) || cell(a, 1).localeCompare(cell(b, 1));
