@@ -44,8 +44,12 @@ end="2026-06-11"
 today=$(( ($(date -j -f "%Y-%m-%d" "$today" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 ))
 end=$(( ($(date -j -f "%Y-%m-%d" "$end" +%s) - $(date -j -f "%Y-%m-%d" "$start" +%s)) / 86400 ))
 
-[ $today -le $end ] && \
-  seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N && \
+if [ $today -gt $end ]; then
+  echo "No dates to fetch — today is past end date."
+  exit 0
+fi
+
+seq $today $end | xargs --max-procs=2 -I N bash ./fetch_attendance.sh N
 
 curl --silent --get "https://api.veracross.com/$school_route/v3/directory/student" \
   --header "Authorization: Bearer $access_token" \
