@@ -270,8 +270,10 @@ HTMLHEAD
         const primary = sortAsc
           ? cell(a, col).localeCompare(cell(b, col))
           : cell(b, col).localeCompare(cell(a, col));
-        if (primary !== 0 || col !== 2) return primary;
-        return cell(a, 0).localeCompare(cell(b, 0)) || cell(a, 1).localeCompare(cell(b, 1));
+        if (primary !== 0) return primary;
+        if (col === 0) return cell(a, 1).localeCompare(cell(b, 1));
+        if (col === 2) return cell(a, 0).localeCompare(cell(b, 0)) || cell(a, 1).localeCompare(cell(b, 1));
+        return 0;
       });
       rows.forEach(row => tbody.appendChild(row));
     });
