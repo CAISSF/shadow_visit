@@ -127,7 +127,7 @@ rm fetch_attendance.sh
 # preserve .env, output.json, and signups.json
 
 
-# Format JSON Response like Veracross UI Response with Sign-Up Tracking
+# Format JSON Response like Veracross UI Response with Email and Sign-Up Tracking
 {
   cat << 'HTMLHEAD'
 <!DOCTYPE html>
