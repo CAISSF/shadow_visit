@@ -39,6 +39,8 @@ export access_token=$(curl --silent --request POST "https://accounts.veracross.c
 
 ```bash
 cat > fetch_attendance.sh << 'EOF'
+day=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%a); \
+[[ "$day" == "Sat" || "$day" == "Sun" ]] && exit 0; \
 date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
 sleep 0.5; \
 curl --silent --get "https://api.veracross.com/$school_route/v3/master_attendance" \
@@ -367,6 +369,19 @@ Entries in `output.json` will be more refined than entries in the Veracross UI; 
 Utilizing parallel processing, half-second pauses, data sanitization, the proper AI model, and only the AI model when you need it all helped optimize commands above. We can optimize the commands even more. 
 
 ##### Alternative Method to Speed Up Processing Attendance
+
+Since students do not attend classes on weekends, we can skip attendance records of Saturdays and Sundays.
+
+```bash
+day=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%a); \
+[[ "$day" == "Sat" || "$day" == "Sun" ]] && exit 0; \
+date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
+sleep 0.5; \
+curl --silent --get "https://api.veracross.com/{subdirectory}/v3/master_attendance" \
+  --header "Authorization: Bearer {your_access_token}" \
+  --header "X-Page-Size: 1000" \
+  --data-urlencode "attendance_date=$date" > $1-attendance.json
+```
 
 Since only data records for current and upcoming visits, tours, and shadow visits are useful, we can confine the date range more.
 
