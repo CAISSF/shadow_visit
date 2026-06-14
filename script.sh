@@ -24,8 +24,10 @@ export access_token=$(curl --silent --request POST "https://accounts.veracross.c
 
 # Step 3: Create a Script
 cat > fetch_attendance.sh << 'EOF'
-date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d); \
-sleep 0.5; \
+day=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%a)
+[[ "$day" == "Sat" || "$day" == "Sun" ]] && exit 0
+date=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%Y-%m-%d)
+sleep 0.5
 curl --silent --get "https://api.veracross.com/$school_route/v3/master_attendance" \
   --header "Authorization: Bearer $access_token" \
   --header "X-Page-Size: 1000" \
