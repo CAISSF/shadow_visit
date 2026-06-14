@@ -370,7 +370,7 @@ Utilizing parallel processing, half-second pauses, data sanitization, the proper
 
 ##### Alternative Method to Speed Up Processing Attendance
 
-Since students do not attend classes on weekends, we can skip attendance records of Saturdays and Sundays.
+Since students do not attend classes on weekends, we can skip attendance records of Saturdays and Sundays. (We could also skip holidays, but on some holidays students attend classes.)
 
 ```bash
 day=$(date -j -v+$1d -f "%Y-%m-%d" "2025-09-01" +%a); \
